@@ -29,9 +29,9 @@ l'enrichissement et l'analyse.
 | 2 | Extraction CVE | ✅ fait (`cve_extraction.py`) |
 | 3 | Enrichissement MITRE + EPSS (dump local `data/mitre/` + `data/first/`) | ✅ fait (`enrichment.py`) |
 | 4 | Consolidation → CSV | ✅ fait (`consolidation.py`, `pipeline.py`) |
-| 5 | Visualisation / analyse | ⏳ à faire (notebook) |
-| 6 | Machine Learning + validation | ⏳ à faire (modèles non encore choisis — à déduire de l'analyse exploratoire) |
-| 7 | Alertes & notifications email | ⏳ à faire (optionnel pour l'envoi, mais sujet + corps du mail attendus) |
+| 5 | Visualisation / analyse | ✅ fait (`notebook.ipynb`, 11 visualisations) |
+| 6 | Machine Learning + validation | ✅ fait (`notebook.ipynb` : RandomForest gravité + KMeans) |
+| 7 | Alertes & notifications email | ✅ fait (`notebook.ipynb` : sujet + corps ; envoi SMTP optionnel non appelé) |
 
 **Changement de plan (2026-06-18)** : le sujet fournit désormais un dump local
 complet (`data/Avis/`, `data/alertes/`, `data/mitre/`, `data/first/`, un
@@ -40,8 +40,16 @@ priorité — `rss.py` et les appels réseau live (MITRE/EPSS) ne servent plus
 que de repli pour un bulletin/CVE absent du dump. Voir `local_source.py` et
 section 5 ci-dessous.
 
-**Décision en attente** : choix des modèles ML. À trancher *après* l'analyse
-exploratoire des données du CSV, pas avant.
+**Modèles ML retenus (2026-06-18)** : supervisé = classification de
+`base_severity` par RandomForest, *sans* `score_cvss` en variable (fuite de
+cible : la gravité en est dérivée) → features `score_epss` + `type_cwe` +
+`type_bulletin` + `editeur`. Non supervisé = KMeans sur (`score_cvss`,
+`score_epss`) pour des profils de risque. Validation : `classification_report`
++ matrice de confusion + cross-val (F1-macro) ; coude + silhouette pour KMeans.
+
+**Périmètre / config** : `OFFLINE_ONLY = True` (aucun réseau) et
+`DEFAULT_YEARS = (2024, 2025, 2026)` (CSV de taille raisonnable). Le notebook
+est construit par `build_notebook.py` puis exécuté ; export `notebook.html`.
 
 ## 3. Architecture
 

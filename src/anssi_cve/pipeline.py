@@ -11,11 +11,14 @@ from .enrichment import enrich_epss, enrich_mitre
 from .local_source import fetch_bulletins
 
 
-def run(output_csv=config.OUTPUT_CSV) -> pd.DataFrame:
-    """Exécute le pipeline complet et écrit le DataFrame consolidé en CSV."""
+def run(output_csv=config.OUTPUT_CSV, years=config.DEFAULT_YEARS) -> pd.DataFrame:
+    """Exécute le pipeline complet et écrit le DataFrame consolidé en CSV.
+
+    ``years`` borne le périmètre (cf. ``config.DEFAULT_YEARS``) ; ``None`` = tout.
+    """
     print("[1/4] Lecture des bulletins ANSSI (dump local data/Avis + data/alertes)...")
-    bulletins = fetch_bulletins()
-    print(f"      {len(bulletins)} bulletins chargés.")
+    bulletins = fetch_bulletins(years=years)
+    print(f"      {len(bulletins)} bulletins chargés (années={years}).")
 
     # Caches d'enrichissement en mémoire : une CVE partagée par plusieurs
     # bulletins n'est interrogée qu'une seule fois.

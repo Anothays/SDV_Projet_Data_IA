@@ -38,3 +38,14 @@ LOCAL_AVIS_DIR = DATA_DIR / "Avis"
 LOCAL_ALERTES_DIR = DATA_DIR / "alertes"
 LOCAL_MITRE_DIR = DATA_DIR / "mitre"
 LOCAL_FIRST_DIR = DATA_DIR / "first"
+
+# Si True, on n'interroge JAMAIS le réseau : le dump local fait foi (une CVE
+# absente du dump est simplement marquée "Non disponible"). Évite des timeouts
+# coûteux hors-ligne et garantit l'accès responsable (section 8) lors du run
+# complet sur ~4100 bulletins.
+OFFLINE_ONLY = True
+
+# Périmètre par défaut du CSV consolidé : on borne aux bulletins récents pour
+# garder un livrable de taille raisonnable (le dump complet ~4100 bulletins
+# produit un CSV de ~170 Mo). Mettre None pour tout traiter.
+DEFAULT_YEARS = (2024, 2025, 2026)

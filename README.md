@@ -5,10 +5,11 @@ identifie les CVE référencées, les enrichit via les API **MITRE** (CVSS, CWE)
 **EPSS/FIRST** (probabilité d'exploitation), puis consolide le tout dans un
 fichier CSV exploitable.
 
-> Périmètre actuel : **étapes 1 à 4** du sujet (extraction → enrichissement →
-> consolidation → CSV). Les visualisations (étape 5), le Machine Learning
-> (étape 6) et les alertes email (étape 7) seront ajoutés dans le notebook à
-> partir du CSV produit.
+> Périmètre : **étapes 1 à 7** du sujet. Le pipeline (`src/anssi_cve/`) couvre
+> l'extraction → l'enrichissement → la consolidation → le CSV. Le notebook
+> (`notebook.ipynb`, exporté en `notebook.html`) couvre l'exploration et les
+> visualisations (étape 5), le Machine Learning (étape 6) et la génération
+> d'alertes email (étape 7) à partir du CSV produit.
 
 ## Source des données
 
@@ -53,9 +54,22 @@ uv run python -m anssi_cve.pipeline   # ou : uv run python main.py
 ```
 
 Le pipeline lit le dump local fourni (`data/Avis/`, `data/alertes/`,
-`data/mitre/`, `data/first/`) et écrit `data/consolidated.csv`. Aucun appel
-réseau n'est nécessaire si le dump couvre tous les bulletins/CVE (~36 s pour
-les 4 103 bulletins / 37 287 CVE fournis).
+`data/mitre/`, `data/first/`) et écrit `data/consolidated.csv`. Par défaut
+`config.OFFLINE_ONLY = True` : **aucun appel réseau** n'est émis (une CVE
+absente du dump est marquée `Non disponible`). Le périmètre est borné aux
+années récentes via `config.DEFAULT_YEARS = (2024, 2025, 2026)` ; mettre
+`None` pour traiter tout le dump.
+
+Puis, pour les étapes 5-7 et le livrable HTML :
+
+```bash
+uv run jupyter nbconvert --to notebook --execute --inplace notebook.ipynb
+uv run jupyter nbconvert --to html notebook.ipynb        # → notebook.html
+```
+
+> `notebook.ipynb` est généré par `build_notebook.py` (script de construction
+> reproductible des cellules) puis exécuté ; on peut aussi l'ouvrir et le
+> relancer directement dans Jupyter.
 
 ## Accès responsable aux ressources externes
 

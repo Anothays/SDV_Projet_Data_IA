@@ -113,7 +113,7 @@ def _extract_affected(data: dict) -> list[dict]:
 def enrich_mitre(cve_id: str) -> dict:
     """Enrichit une CVE via le dump local MITRE, ou l'API en repli."""
     data = _read_local(config.LOCAL_MITRE_DIR, cve_id)
-    if data is None:
+    if data is None and not config.OFFLINE_ONLY:
         data = get_json(config.MITRE_API.format(cve_id=cve_id), _mitre_cache(cve_id))
     if not data:
         return {
@@ -136,7 +136,7 @@ def enrich_mitre(cve_id: str) -> dict:
 def enrich_epss(cve_id: str) -> Optional[float]:
     """Renvoie le score EPSS (probabilité d'exploitation) ou ``None``."""
     data = _read_local(config.LOCAL_FIRST_DIR, cve_id)
-    if data is None:
+    if data is None and not config.OFFLINE_ONLY:
         data = get_json(config.EPSS_API.format(cve_id=cve_id), _first_cache(cve_id))
     if not data:
         return None

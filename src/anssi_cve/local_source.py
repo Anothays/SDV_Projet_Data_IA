@@ -10,10 +10,20 @@ et d'étape 2 (CVE listées dans ``cves``).
 """
 
 import json
+import re
 
 from . import config
 
 _BASE_URLS = {"Avis": "https://www.cert.ssi.gouv.fr/avis/", "Alerte": "https://www.cert.ssi.gouv.fr/alerte/"}
+
+# Année dans un identifiant ANSSI, ex. CERTFR-2024-AVI-0012 -> 2024.
+_YEAR_PATTERN = re.compile(r"CERTFR-(\d{4})-")
+
+
+def _year_of(bulletin_id: str):
+    """Renvoie l'année (int) d'un identifiant ANSSI, ou None si introuvable."""
+    match = _YEAR_PATTERN.search(bulletin_id or "")
+    return int(match.group(1)) if match else None
 
 
 def _load_bulletin(path, bulletin_type: str) -> dict | None:
@@ -25,7 +35,11 @@ def _load_bulletin(path, bulletin_type: str) -> dict | None:
 
     bulletin_id = data.get("reference") or path.name
     revisions = data.get("revisions") or []
-    date_publication = revisions[0]["revision_date"] if revisions else ""
+    # Date de publication = date de la première révision ("Version initiale").
+    # Défensif : une révision peut être malformée (clé absente).
+    date_publication = ""
+    if revisions and isinstance(revisions[0], dict):
+        date_publication = revisions[0].get("revision_date", "")
     link = f"{_BASE_URLS[bulletin_type]}{bulletin_id}/"
 
     return {
@@ -38,8 +52,13 @@ def _load_bulletin(path, bulletin_type: str) -> dict | None:
     }
 
 
-def fetch_bulletins() -> list[dict]:
-    """Charge tous les avis et alertes depuis le dump local fourni."""
+def fetch_bulletins(years=None) -> list[dict]:
+    """Charge les avis et alertes depuis le dump local fourni.
+
+    ``years`` : itérable d'années à conserver (ex. ``(2024, 2025, 2026)``) pour
+    borner le périmètre et la taille du CSV. ``None`` = tous les bulletins.
+    """
+    allowed = set(years) if years is not None else None
     bulletins: list[dict] = []
     for directory, bulletin_type in (
         (config.LOCAL_AVIS_DIR, "Avis"),
@@ -47,6 +66,8 @@ def fetch_bulletins() -> list[dict]:
     ):
         for path in sorted(directory.iterdir()):
             if not path.is_file():
+                continue
+            if allowed is not None and _year_of(path.name) not in allowed:
                 continue
             bulletin = _load_bulletin(path, bulletin_type)
             if bulletin is not None:
