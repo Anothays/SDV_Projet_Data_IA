@@ -8,3 +8,9 @@ wheels/
 
 # Virtual environments
 .venv
+
+# macOS
+.DS_Store
+
+# Cache des ressources externes (régénérable, ne pas versionner)
+data/cache/

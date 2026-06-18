@@ -1,17 +1,10 @@
-import feedparser
+"""Point d'entrée : lance le pipeline ANSSI/CVE (étapes 1 à 4)."""
+
+from anssi_cve.pipeline import run
+
 
 def main():
-    
-    url = "https://www.cert.ssi.gouv.fr/avis/feed/"
-    rss_feed = feedparser.parse(url)
-    
-    print("Hello from examen!")
-
-    for entry in rss_feed.entries:
-        print("Titre :",entry.title)
-        print("Description:", entry.description)
-        print("Lien :", entry.link)
-        print("Date :", entry.published)
+    run()
 
 
 if __name__ == "__main__":
