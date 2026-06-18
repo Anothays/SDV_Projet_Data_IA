@@ -45,7 +45,7 @@ LOCAL_FIRST_DIR = DATA_DIR / "first"
 # complet sur ~4100 bulletins.
 OFFLINE_ONLY = True
 
-# Périmètre par défaut du CSV consolidé : on borne aux bulletins récents pour
-# garder un livrable de taille raisonnable (le dump complet ~4100 bulletins
-# produit un CSV de ~170 Mo). Mettre None pour tout traiter.
-DEFAULT_YEARS = (2024, 2025, 2026)
+# Périmètre par défaut du CSV consolidé : None = tout le dump local fourni
+# (~4100 bulletins, 2021-2026), soit le CSV livré (~170 Mo). Restreindre à un
+# sous-ensemble d'années (ex. (2024, 2025, 2026)) pour un livrable plus léger.
+DEFAULT_YEARS = None

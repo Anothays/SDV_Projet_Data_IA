@@ -48,8 +48,13 @@ cible : la gravité en est dérivée) → features `score_epss` + `type_cwe` +
 + matrice de confusion + cross-val (F1-macro) ; coude + silhouette pour KMeans.
 
 **Périmètre / config** : `OFFLINE_ONLY = True` (aucun réseau) et
-`DEFAULT_YEARS = (2024, 2025, 2026)` (CSV de taille raisonnable). Le notebook
-est construit par `build_notebook.py` puis exécuté ; export `notebook.html`.
+`DEFAULT_YEARS = None` (dump local complet, 2021-2026 — c'est le périmètre
+du `consolidated.csv` livré et du notebook). Le notebook est construit par
+`build_notebook.py` puis exécuté ; export `notebook.html`.
+
+**Livraison (2026-06-18)** : remise sous forme d'**archive** au professeur,
+pas via push git — `data/consolidated.csv` (exclu de `.gitignore`, comme
+tout `data/*`) doit donc être inclus manuellement dans l'archive envoyée.
 
 ## 3. Architecture
 
