@@ -56,9 +56,10 @@ uv run python -m anssi_cve.pipeline   # ou : uv run python main.py
 Le pipeline lit le dump local fourni (`data/Avis/`, `data/alertes/`,
 `data/mitre/`, `data/first/`) et écrit `data/consolidated.csv`. Par défaut
 `config.OFFLINE_ONLY = True` : **aucun appel réseau** n'est émis (une CVE
-absente du dump est marquée `Non disponible`). Le périmètre est borné aux
-années récentes via `config.DEFAULT_YEARS = (2024, 2025, 2026)` ; mettre
-`None` pour traiter tout le dump.
+absente du dump est marquée `Non disponible`). Par défaut
+`config.DEFAULT_YEARS = None` : tout le dump local est traité (~4100
+bulletins, 2021-2026), soit le CSV livré (~170 Mo) ; passer un tuple
+d'années (ex. `(2024, 2025, 2026)`) pour restreindre le périmètre.
 
 Puis, pour les étapes 5-7 et le livrable HTML :
 

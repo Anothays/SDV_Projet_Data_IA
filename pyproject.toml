@@ -1,7 +1,7 @@
 [project]
-name = "examen"
+name = "anssi-cve-analysis"
 version = "0.1.0"
-description = "Add your description here"
+description = "Extraction, enrichissement (MITRE/EPSS) et analyse des avis et alertes ANSSI/CERT-FR"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
