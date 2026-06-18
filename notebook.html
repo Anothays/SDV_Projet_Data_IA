@@ -7796,7 +7796,7 @@ a.anchor-link {
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
 <main>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6ff3c3d3">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=680a6df0">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7813,7 +7813,30 @@ identification des CVE → enrichissement MITRE/EPSS → CSV consolidé). Il cou
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=c6418f74">
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=562537d2">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="D%C3%A9marche-%E2%80%94-pourquoi-partir-du-CSV-consolid%C3%A9">Démarche — pourquoi partir du CSV consolidé<a class="anchor-link" href="#D%C3%A9marche-%E2%80%94-pourquoi-partir-du-CSV-consolid%C3%A9">¶</a></h3><p><strong>Choix</strong> : on charge <code>data/consolidated.csv</code> (livrable 2) plutôt que de relancer
+le pipeline d'extraction/enrichissement ici.</p>
+<ul>
+<li><em>Pourquoi</em> : le CSV est l'unique source de l'analyse → le notebook est <strong>rejouable
+à volonté</strong> sans re-télécharger les bulletins ni ré-interroger MITRE/EPSS, et
+l'analyse reste <strong>découplée</strong> du code du pipeline.</li>
+<li><em>Typage défensif</em> : un CSV est entièrement textuel et contient des <code>"Non disponible"</code>.
+On convertit donc <code>score_cvss</code>/<code>score_epss</code> en numérique et la date en <code>datetime</code>
+avec <code>errors="coerce"</code> → les valeurs non convertibles deviennent <code>NaN</code> au lieu de
+faire planter l'analyse.</li>
+<li><em>Alternative écartée</em> : recalculer les données dans le notebook → lent, dépendant
+du réseau/dump, et mélange les responsabilités (pipeline vs analyse).</li>
+</ul>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=bfdc3cc5">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8000,20 +8023,27 @@ CVE uniques : 31564
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=52a38916">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ad24fd2c">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="%C3%89tape-5-%E2%80%94-Exploration-des-donn%C3%A9es">Étape 5 — Exploration des données<a class="anchor-link" href="#%C3%89tape-5-%E2%80%94-Exploration-des-donn%C3%A9es">¶</a></h2><p>Une ligne = un couple (bulletin × CVE) : un bulletin multi-CVE est donc répété.
-Pour les analyses <strong>au niveau vulnérabilité</strong> (distribution des scores, types CWE…),
-on dédoublonne sur <code>cve_id</code> afin de ne pas surpondérer les CVE citées par plusieurs
-bulletins. Les analyses <strong>au niveau bulletin/éditeur</strong> gardent le détail complet.</p>
+<h2 id="%C3%89tape-5-%E2%80%94-Exploration-des-donn%C3%A9es">Étape 5 — Exploration des données<a class="anchor-link" href="#%C3%89tape-5-%E2%80%94-Exploration-des-donn%C3%A9es">¶</a></h2><h3 id="D%C3%A9marche-%E2%80%94-deux-niveaux-de-lecture">Démarche — deux niveaux de lecture<a class="anchor-link" href="#D%C3%A9marche-%E2%80%94-deux-niveaux-de-lecture">¶</a></h3><p>Une ligne = un couple (bulletin × CVE) : un bulletin multi-CVE est donc répété.
+Ce détail impose un choix méthodologique selon la question posée :</p>
+<ul>
+<li><strong>Niveau vulnérabilité</strong> (distribution des scores, types CWE…) → on dédoublonne
+sur <code>cve_id</code> (<code>df.drop_duplicates("cve_id")</code>). <em>Pourquoi</em> : une CVE citée par 50
+bulletins serait sinon comptée 50 fois et <strong>biaiserait</strong> les distributions.</li>
+<li><strong>Niveau bulletin / éditeur</strong> (qui est le plus touché, avis vs alertes) → on garde
+<strong>toutes</strong> les lignes, car la répétition y est l'information (volume d'exposition).</li>
+<li><em>Alternative écartée</em> : tout analyser sur les lignes brutes sans distinction →
+conclusions faussées sur la gravité moyenne et les types de failles.</li>
+</ul>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=d2387873">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=d2aa4614">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8312,7 +8342,7 @@ memory usage: 12.6 MB
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=6740cb71">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=7e1fb17f">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8352,7 +8382,7 @@ produit      4.7
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=049ca7d2">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=91f04338">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8415,17 +8445,29 @@ Name: count, dtype: int64
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ad43d78e">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=c4b05e26">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="%C3%89tape-5-%E2%80%94-Visualisations">Étape 5 — Visualisations<a class="anchor-link" href="#%C3%89tape-5-%E2%80%94-Visualisations">¶</a></h2>
+<h2 id="%C3%89tape-5-%E2%80%94-Visualisations">Étape 5 — Visualisations<a class="anchor-link" href="#%C3%89tape-5-%E2%80%94-Visualisations">¶</a></h2><h3 id="D%C3%A9marche-%E2%80%94-chaque-graphe-r%C3%A9pond-%C3%A0-une-question">Démarche — chaque graphe répond à une question<a class="anchor-link" href="#D%C3%A9marche-%E2%80%94-chaque-graphe-r%C3%A9pond-%C3%A0-une-question">¶</a></h3><p>On ne dessine pas pour dessiner : chaque visualisation cible une question de priorisation
+(quelles vulns sont graves ? exploitables ? quels produits ? quelle dynamique ?). Choix
+de représentation non triviaux :</p>
+<ul>
+<li><strong>Histogramme / countplot</strong> pour les distributions (CVSS, gravité).</li>
+<li><strong>Camembert</strong> pour le CWE : on veut la <em>part</em> de chaque type de faille dans un tout.</li>
+<li><strong>Échelle log</strong> pour l'EPSS : la distribution est très asymétrique (la plupart des CVE
+ont un EPSS proche de 0, quelques-unes très élevé) → le log rend la courbe lisible.</li>
+<li><strong>Boxplot</strong> pour la dispersion des CVSS par éditeur (médiane + étalement, pas juste une moyenne).</li>
+<li>Les distributions utilisent la vue <strong>dédoublonnée <code>cve</code></strong> ; les classements éditeur/produit
+utilisent <strong><code>df</code></strong> complet (volume d'exposition).</li>
+</ul>
+<h4 id="Groupe-1-%E2%80%94-Distributions-(gravit%C3%A9-&amp;-exploitabilit%C3%A9)">Groupe 1 — Distributions (gravité &amp; exploitabilité)<a class="anchor-link" href="#Groupe-1-%E2%80%94-Distributions-(gravit%C3%A9-&amp;-exploitabilit%C3%A9)">¶</a></h4>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=5fd8854f">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=775f5547">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8456,7 +8498,7 @@ Name: count, dtype: int64
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=322555c7">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=00cf5a23">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8489,7 +8531,7 @@ Name: count, dtype: int64
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ffe26275">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=879076a8">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8521,7 +8563,7 @@ Name: count, dtype: int64
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=8cf1d469">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=23e7a54a">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8554,7 +8596,18 @@ Name: count, dtype: int64
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=76eba450">
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=2e6453f6">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h4 id="Groupe-2-%E2%80%94-Acteurs-les-plus-expos%C3%A9s-(%C3%A9diteurs-&amp;-produits)">Groupe 2 — Acteurs les plus exposés (éditeurs &amp; produits)<a class="anchor-link" href="#Groupe-2-%E2%80%94-Acteurs-les-plus-expos%C3%A9s-(%C3%A9diteurs-&amp;-produits)">¶</a></h4>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=15b4f3b0">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8586,7 +8639,7 @@ Name: count, dtype: int64
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=c5f0b7ae">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=7e87d444">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8618,7 +8671,20 @@ Name: count, dtype: int64
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=c53e3234">
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6716b9d9">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h4 id="Groupe-3-%E2%80%94-Relation-gravit%C3%A9-%E2%86%94-exploitabilit%C3%A9-(CVSS-vs-EPSS)">Groupe 3 — Relation gravité ↔ exploitabilité (CVSS vs EPSS)<a class="anchor-link" href="#Groupe-3-%E2%80%94-Relation-gravit%C3%A9-%E2%86%94-exploitabilit%C3%A9-(CVSS-vs-EPSS)">¶</a></h4><p>Question clé de priorisation : une note de gravité élevée implique-t-elle une forte
+probabilité d'exploitation ? La heatmap quantifie la corrélation, le nuage de points
+en montre la forme (et révèle les CVE « graves mais peu exploitées » et inversement).</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=105341b8">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8649,7 +8715,7 @@ Name: count, dtype: int64
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=b590da8f">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=b4cf92e7">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8681,7 +8747,18 @@ Name: count, dtype: int64
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=dbc4c43b">
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=06f24749">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h4 id="Groupe-4-%E2%80%94-Dynamique-temporelle-&amp;-dispersion-par-%C3%A9diteur">Groupe 4 — Dynamique temporelle &amp; dispersion par éditeur<a class="anchor-link" href="#Groupe-4-%E2%80%94-Dynamique-temporelle-&amp;-dispersion-par-%C3%A9diteur">¶</a></h4>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=45e6eba1">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8714,7 +8791,7 @@ Name: count, dtype: int64
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=184c1f73">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=93deb7a9">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8747,7 +8824,7 @@ Name: count, dtype: int64
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=143c7225">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=f69df628">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8782,7 +8859,7 @@ Name: count, dtype: int64
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=5f8d26ea">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=7fe3552a">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8804,7 +8881,7 @@ gravité à partir d'autres signaux (probabilité d'exploitation, type de faille
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=63f6e98d">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=47d7b4b4">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8855,7 +8932,33 @@ gravité à partir d'autres signaux (probabilité d'exploitation, type de faille
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=f1367fb2">
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=24a2333d">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="D%C3%A9marche-%E2%80%94-choix-du-mod%C3%A8le-supervis%C3%A9-et-de-la-m%C3%A9trique">Démarche — choix du modèle supervisé et de la métrique<a class="anchor-link" href="#D%C3%A9marche-%E2%80%94-choix-du-mod%C3%A8le-supervis%C3%A9-et-de-la-m%C3%A9trique">¶</a></h3><ul>
+<li><strong>Anti-fuite de cible (décision décisive)</strong> : <code>base_severity</code> est une fonction
+<em>déterministe</em> de <code>score_cvss</code> (barème &lt;4/&lt;7/&lt;9/≥9). L'utiliser comme variable
+donnerait ~100 % d'accuracy <strong>sans rien apprendre</strong>. On l'exclut → on teste si la
+gravité est prévisible à partir de signaux <em>indépendants</em> (EPSS, CWE, type, éditeur).</li>
+<li><em>Alternatives écartées</em> : (a) <strong>régression du CVSS</strong> → R² flatteur mais contourne la
+vraie question ; (b) <strong>CVSS en feature</strong> → fuite triviale.</li>
+<li><strong>RandomForest</strong> retenu : gère nativement le mélange numérique/catégoriel one-hot,
+capture les non-linéarités, et fournit l'<strong>importance des variables</strong> (interprétable).
+<em>Écartés</em> : régression logistique / SVM linéaire (moins adaptés au one-hot large et
+aux interactions, moins lisibles ici).</li>
+<li><code>class_weight="balanced"</code> car les classes sont déséquilibrées (peu de Faible/Critique).</li>
+<li>Métrique = <strong>F1-macro</strong> : moyenne non pondérée sur les classes → l'accuracy serait
+trompeuse (un modèle prédisant toujours « Moyenne/Élevée » aurait une accuracy correcte
+mais raterait les classes rares qui nous intéressent).</li>
+</ul>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=c70f1890">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8903,7 +9006,7 @@ weighted avg       0.59      0.52      0.55      4885
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=b58b5a25">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=92a84b11">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8935,7 +9038,7 @@ weighted avg       0.59      0.52      0.55      4885
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=294479f4">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=657aaacc">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8977,7 +9080,32 @@ weighted avg       0.59      0.52      0.55      4885
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=dec7f882">
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=4d1881fe">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="D%C3%A9marche-%E2%80%94-choix-du-mod%C3%A8le-non-supervis%C3%A9">Démarche — choix du modèle non supervisé<a class="anchor-link" href="#D%C3%A9marche-%E2%80%94-choix-du-mod%C3%A8le-non-supervis%C3%A9">¶</a></h3><ul>
+<li>Objectif : faire émerger des <strong>profils de risque</strong> en croisant gravité (CVSS) et
+exploitabilité (EPSS), sans étiquette.</li>
+<li><strong>KMeans</strong> retenu : on cherche des groupes globulaires sur 2 axes continus, c'est
+rapide sur ~30k points et le résultat est directement lisible (centres = profils).
+<em>Écartés</em> : <strong>DBSCAN</strong> (très sensible à <code>eps</code>/<code>min_samples</code>, peu d'intérêt ici où l'on
+veut un nombre fixe de profils), <strong>clustering agglomératif</strong> (coût mémoire/temps
+prohibitif à cette volumétrie).</li>
+<li><strong>Standardisation</strong> obligatoire : CVSS ∈ [0,10] et EPSS ∈ [0,1] → sans mise à l'échelle,
+le CVSS dominerait la distance euclidienne.</li>
+<li>Choix de <strong>k</strong> par <strong>coude (inertie)</strong> + <strong>silhouette</strong>. La silhouette favorise k=2
+(séparation nette), mais on retient <strong>k=4</strong> pour des profils plus <em>actionnables</em>
+(ex. « critique &amp; très exploitable » vs « grave mais peu exploité ») — compromis
+finesse/interprétabilité assumé.</li>
+</ul>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=1b69e5e4">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9025,7 +9153,7 @@ weighted avg       0.59      0.52      0.55      4885
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=6ad691e2">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=6f79dd15">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9079,7 +9207,7 @@ cluster
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=62c768cb">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=73f79e4d">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9098,7 +9226,7 @@ et des clusters « gravité élevée mais faible exploitabilité » moins urgent
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6699d8e5">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=7fcd2077">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9110,7 +9238,27 @@ de mail personnalisé. L'envoi SMTP est volontairement laissé optionnel (cf. su
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=3b02b6a6">
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ba5bf119">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="D%C3%A9marche-%E2%80%94-crit%C3%A8re-de-d%C3%A9clenchement-des-alertes">Démarche — critère de déclenchement des alertes<a class="anchor-link" href="#D%C3%A9marche-%E2%80%94-crit%C3%A8re-de-d%C3%A9clenchement-des-alertes">¶</a></h3><ul>
+<li>On déclenche sur <code>CVSS ≥ 9</code> <strong>OU</strong> <code>EPSS ≥ 0.5</code>. <em>Pourquoi le OU</em> : les deux signaux
+sont complémentaires — une vuln <strong>critique</strong> (gravité) doit alerter même si peu
+exploitée, et une vuln seulement « Moyenne » mais <strong>très exploitée</strong> (EPSS élevé) est
+un danger réel immédiat. Un <strong>ET</strong> raterait ces deux cas.</li>
+<li>Seuils : 9 = seuil « Critique » du barème CVSS ; 0.5 = probabilité d'exploitation
+majoritaire (ajustables selon l'appétence au risque).</li>
+<li><strong>Envoi SMTP volontairement non appelé</strong> : le sujet le rend optionnel, et câbler un
+envoi réel exposerait des identifiants en clair. On fournit la fonction prête à l'emploi.</li>
+</ul>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=25f748f2">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9280,7 +9428,7 @@ de mail personnalisé. L'envoi SMTP est volontairement laissé optionnel (cf. su
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=e1e346ec">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=e6924c8c">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9412,7 +9560,7 @@ l'exposition de vos systèmes.
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=8031e32c">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=1b8123d2">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9452,7 +9600,7 @@ l'exposition de vos systèmes.
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=25c0e8d1">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=05ca1d58">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>

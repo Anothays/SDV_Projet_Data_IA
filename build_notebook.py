@@ -33,6 +33,23 @@ Périmètre des données : bulletins CERT-FR (avis + alertes) 2024–2026."""
 )
 
 # ---------------------------------------------------------------- Chargement
+md(
+    """### Démarche — pourquoi partir du CSV consolidé
+
+**Choix** : on charge `data/consolidated.csv` (livrable 2) plutôt que de relancer
+le pipeline d'extraction/enrichissement ici.
+
+- *Pourquoi* : le CSV est l'unique source de l'analyse → le notebook est **rejouable
+  à volonté** sans re-télécharger les bulletins ni ré-interroger MITRE/EPSS, et
+  l'analyse reste **découplée** du code du pipeline.
+- *Typage défensif* : un CSV est entièrement textuel et contient des `"Non disponible"`.
+  On convertit donc `score_cvss`/`score_epss` en numérique et la date en `datetime`
+  avec `errors="coerce"` → les valeurs non convertibles deviennent `NaN` au lieu de
+  faire planter l'analyse.
+- *Alternative écartée* : recalculer les données dans le notebook → lent, dépendant
+  du réseau/dump, et mélange les responsabilités (pipeline vs analyse)."""
+)
+
 code(
     """import warnings
 warnings.filterwarnings("ignore")
@@ -64,10 +81,18 @@ df.head()"""
 md(
     """## Étape 5 — Exploration des données
 
+### Démarche — deux niveaux de lecture
+
 Une ligne = un couple (bulletin × CVE) : un bulletin multi-CVE est donc répété.
-Pour les analyses **au niveau vulnérabilité** (distribution des scores, types CWE…),
-on dédoublonne sur `cve_id` afin de ne pas surpondérer les CVE citées par plusieurs
-bulletins. Les analyses **au niveau bulletin/éditeur** gardent le détail complet."""
+Ce détail impose un choix méthodologique selon la question posée :
+
+- **Niveau vulnérabilité** (distribution des scores, types CWE…) → on dédoublonne
+  sur `cve_id` (`df.drop_duplicates("cve_id")`). *Pourquoi* : une CVE citée par 50
+  bulletins serait sinon comptée 50 fois et **biaiserait** les distributions.
+- **Niveau bulletin / éditeur** (qui est le plus touché, avis vs alertes) → on garde
+  **toutes** les lignes, car la répétition y est l'information (volume d'exposition).
+- *Alternative écartée* : tout analyser sur les lignes brutes sans distinction →
+  conclusions faussées sur la gravité moyenne et les types de failles."""
 )
 
 code(
@@ -96,7 +121,25 @@ print(df[df["editeur"] != "Non disponible"]["editeur"].value_counts().head(10))"
 )
 
 # ---------------------------------------------------------------- Visualisations
-md("## Étape 5 — Visualisations")
+md(
+    """## Étape 5 — Visualisations
+
+### Démarche — chaque graphe répond à une question
+
+On ne dessine pas pour dessiner : chaque visualisation cible une question de priorisation
+(quelles vulns sont graves ? exploitables ? quels produits ? quelle dynamique ?). Choix
+de représentation non triviaux :
+
+- **Histogramme / countplot** pour les distributions (CVSS, gravité).
+- **Camembert** pour le CWE : on veut la *part* de chaque type de faille dans un tout.
+- **Échelle log** pour l'EPSS : la distribution est très asymétrique (la plupart des CVE
+  ont un EPSS proche de 0, quelques-unes très élevé) → le log rend la courbe lisible.
+- **Boxplot** pour la dispersion des CVSS par éditeur (médiane + étalement, pas juste une moyenne).
+- Les distributions utilisent la vue **dédoublonnée `cve`** ; les classements éditeur/produit
+  utilisent **`df`** complet (volume d'exposition).
+
+#### Groupe 1 — Distributions (gravité & exploitabilité)"""
+)
 
 code(
     """# 1) Histogramme des scores CVSS
@@ -139,6 +182,8 @@ plt.yscale("log")
 plt.show()"""
 )
 
+md("#### Groupe 2 — Acteurs les plus exposés (éditeurs & produits)")
+
 code(
     """# 5) Top 15 éditeurs les plus affectés
 top_ed = df[df["editeur"] != "Non disponible"]["editeur"].value_counts().head(15)
@@ -159,6 +204,14 @@ plt.xlabel("Nombre de couples bulletin × CVE"); plt.ylabel("")
 plt.show()"""
 )
 
+md(
+    """#### Groupe 3 — Relation gravité ↔ exploitabilité (CVSS vs EPSS)
+
+Question clé de priorisation : une note de gravité élevée implique-t-elle une forte
+probabilité d'exploitation ? La heatmap quantifie la corrélation, le nuage de points
+en montre la forme (et révèle les CVE « graves mais peu exploitées » et inversement)."""
+)
+
 code(
     """# 7) Heatmap de corrélation CVSS / EPSS
 corr = cve[["score_cvss", "score_epss"]].dropna().corr()
@@ -177,6 +230,8 @@ plt.title("Score EPSS en fonction du score CVSS")
 plt.xlabel("Score CVSS"); plt.ylabel("Score EPSS")
 plt.show()"""
 )
+
+md("#### Groupe 4 — Dynamique temporelle & dispersion par éditeur")
 
 code(
     """# 9) Courbe cumulative des vulnérabilités dans le temps
@@ -257,6 +312,25 @@ target = ml["base_severity"]
 print("Échantillon ML :", features.shape, "| classes :", dict(target.value_counts()))"""
 )
 
+md(
+    """### Démarche — choix du modèle supervisé et de la métrique
+
+- **Anti-fuite de cible (décision décisive)** : `base_severity` est une fonction
+  *déterministe* de `score_cvss` (barème <4/<7/<9/≥9). L'utiliser comme variable
+  donnerait ~100 % d'accuracy **sans rien apprendre**. On l'exclut → on teste si la
+  gravité est prévisible à partir de signaux *indépendants* (EPSS, CWE, type, éditeur).
+- *Alternatives écartées* : (a) **régression du CVSS** → R² flatteur mais contourne la
+  vraie question ; (b) **CVSS en feature** → fuite triviale.
+- **RandomForest** retenu : gère nativement le mélange numérique/catégoriel one-hot,
+  capture les non-linéarités, et fournit l'**importance des variables** (interprétable).
+  *Écartés* : régression logistique / SVM linéaire (moins adaptés au one-hot large et
+  aux interactions, moins lisibles ici).
+- `class_weight="balanced"` car les classes sont déséquilibrées (peu de Faible/Critique).
+- Métrique = **F1-macro** : moyenne non pondérée sur les classes → l'accuracy serait
+  trompeuse (un modèle prédisant toujours « Moyenne/Élevée » aurait une accuracy correcte
+  mais raterait les classes rares qui nous intéressent)."""
+)
+
 code(
     """# --- Supervisé : Random Forest ---
 X_train, X_test, y_train, y_test = train_test_split(
@@ -291,6 +365,24 @@ sns.barplot(x=imp.values, y=imp.index, palette="flare")
 plt.title("Top 12 des variables les plus importantes (Random Forest)")
 plt.xlabel("Importance"); plt.ylabel("")
 plt.show()"""
+)
+
+md(
+    """### Démarche — choix du modèle non supervisé
+
+- Objectif : faire émerger des **profils de risque** en croisant gravité (CVSS) et
+  exploitabilité (EPSS), sans étiquette.
+- **KMeans** retenu : on cherche des groupes globulaires sur 2 axes continus, c'est
+  rapide sur ~30k points et le résultat est directement lisible (centres = profils).
+  *Écartés* : **DBSCAN** (très sensible à `eps`/`min_samples`, peu d'intérêt ici où l'on
+  veut un nombre fixe de profils), **clustering agglomératif** (coût mémoire/temps
+  prohibitif à cette volumétrie).
+- **Standardisation** obligatoire : CVSS ∈ [0,10] et EPSS ∈ [0,1] → sans mise à l'échelle,
+  le CVSS dominerait la distance euclidienne.
+- Choix de **k** par **coude (inertie)** + **silhouette**. La silhouette favorise k=2
+  (séparation nette), mais on retient **k=4** pour des profils plus *actionnables*
+  (ex. « critique & très exploitable » vs « grave mais peu exploité ») — compromis
+  finesse/interprétabilité assumé."""
 )
 
 code(
@@ -348,6 +440,19 @@ md(
 On cible les vulnérabilités **critiques et activement exploitables** (CVSS élevé
 **et/ou** EPSS élevé) sur des produits affectés, et on génère un **sujet + corps**
 de mail personnalisé. L'envoi SMTP est volontairement laissé optionnel (cf. sujet)."""
+)
+
+md(
+    """### Démarche — critère de déclenchement des alertes
+
+- On déclenche sur `CVSS ≥ 9` **OU** `EPSS ≥ 0.5`. *Pourquoi le OU* : les deux signaux
+  sont complémentaires — une vuln **critique** (gravité) doit alerter même si peu
+  exploitée, et une vuln seulement « Moyenne » mais **très exploitée** (EPSS élevé) est
+  un danger réel immédiat. Un **ET** raterait ces deux cas.
+- Seuils : 9 = seuil « Critique » du barème CVSS ; 0.5 = probabilité d'exploitation
+  majoritaire (ajustables selon l'appétence au risque).
+- **Envoi SMTP volontairement non appelé** : le sujet le rend optionnel, et câbler un
+  envoi réel exposerait des identifiants en clair. On fournit la fonction prête à l'emploi."""
 )
 
 code(
