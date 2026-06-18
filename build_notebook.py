@@ -29,7 +29,8 @@ identification des CVE → enrichissement MITRE/EPSS → CSV consolidé). Il cou
 - **Étape 6** — modèles de Machine Learning (1 supervisé + 1 non supervisé) avec validation.
 - **Étape 7** — génération d'alertes email personnalisées pour les vulnérabilités critiques.
 
-Périmètre des données : bulletins CERT-FR (avis + alertes) 2024–2026."""
+Périmètre des données : bulletins CERT-FR (avis + alertes) du `consolidated.csv` livré
+(défini par `config.DEFAULT_YEARS` dans le pipeline)."""
 )
 
 # ---------------------------------------------------------------- Chargement
@@ -63,18 +64,151 @@ sns.set_theme(style="whitegrid")
 plt.rcParams["figure.figsize"] = (10, 5)
 pd.set_option("display.max_columns", None)
 
+# Chargement BRUT : à ce stade tout est encore du texte (object).
 df = pd.read_csv("data/consolidated.csv")
+n_lignes_brut = len(df)
 
-# Typage : scores numériques, date en datetime.
-df["score_cvss"] = pd.to_numeric(df["score_cvss"], errors="coerce")
+print("Lignes (couples bulletin × CVE) :", n_lignes_brut)
+print("Colonnes :", len(df.columns))
+print("\\nTypes bruts (tout est 'object' = texte) :")
+print(df.dtypes.to_string())
+df.head()"""
+)
+
+# ---------------------------------------------------------------- Nettoyage
+md(
+    """## Nettoyage & préparation des données
+
+### Démarche — d'où viennent les imperfections
+
+Les données sont produites par un **enrichissement automatisé** agrégeant plusieurs
+sources (bulletins ANSSI, API MITRE, API EPSS). Un CSV issu de ce flux présente des
+imperfections typiques qu'on traite ici **avant** toute analyse :
+
+1. **Types** — un CSV est entièrement textuel ; les scores et dates doivent être convertis.
+2. **Valeurs manquantes / sentinelles** — tous les champs ne sont pas toujours renseignés
+   (CVE sans CVSS, produit inconnu…).
+3. **Doublons** — vérifier qu'aucune ligne n'est dupliquée par erreur.
+4. **Plages de valeurs** — garantir CVSS ∈ [0,10] et EPSS ∈ [0,1].
+
+> Note : le pipeline amont (`enrichment.py`) est déjà **défensif** (champ absent →
+> `None`/`"Non disponible"`, jamais d'exception). Le nettoyage est donc surtout de la
+> **validation + documentation** ; on le rend néanmoins explicite et reproductible ici."""
+)
+
+md(
+    """### 2.1 — Typage
+
+**Choix** : conversion avec `errors="coerce"`. *Pourquoi* : les colonnes numériques
+contiennent des cellules vides ou textuelles (sentinelle) ; `coerce` transforme tout
+ce qui n'est pas convertible en `NaN` propre **au lieu de lever une exception**. La
+date est passée en `datetime` UTC, ce qui permet d'en dériver l'année."""
+)
+
+code(
+    """df["score_cvss"] = pd.to_numeric(df["score_cvss"], errors="coerce")
 df["score_epss"] = pd.to_numeric(df["score_epss"], errors="coerce")
 df["date_publication"] = pd.to_datetime(df["date_publication"], errors="coerce", utc=True)
 df["annee"] = df["date_publication"].dt.year
 
-print("Lignes (couples bulletin × CVE) :", len(df))
+print("Types après conversion :")
+print(df[["score_cvss", "score_epss", "date_publication", "annee"]].dtypes.to_string())"""
+)
+
+md(
+    """### 2.2 — Valeurs manquantes & sentinelles
+
+**Choix décisif** : on **conserve la sentinelle `"Non disponible"`** pour les colonnes
+texte (CWE, éditeur, produit…) au lieu de la convertir en `NaN`.
+
+- *Pourquoi* : elle distingue explicitement « **enrichissement absent** » d'une vraie
+  valeur, et garde les graphiques catégoriels lisibles (une part « Non disponible »
+  est une information en soi).
+- *Alternative écartée* : tout passer en `NaN`. Cela uniformiserait le traitement mais
+  ferait perdre cette distinction et compliquerait les filtres `!= "Non disponible"`
+  utilisés dans toute la suite.
+- Pour les colonnes **numériques**, l'absence est déjà un `NaN` (cf. 2.1)."""
+)
+
+code(
+    """na_num = df[["score_cvss", "score_epss"]].isna().mean().mul(100).round(1)
+txt_cols = ["type_cwe", "editeur", "produit", "versions_affectees", "description"]
+indispo = (df[txt_cols] == "Non disponible").mean().mul(100).round(1)
+
+print("% NaN (colonnes numériques) :")
+print(na_num.to_string())
+print("\\n% 'Non disponible' (colonnes texte) :")
+print(indispo.to_string())"""
+)
+
+md(
+    """### 2.3 — Doublons
+
+**Choix** : on ne supprime **que les lignes strictement identiques** sur toutes les
+colonnes.
+
+- *Pourquoi* : une ligne = un couple (bulletin × CVE). Une même CVE citée par plusieurs
+  bulletins apparaît **légitimement** plusieurs fois — c'est l'information d'exposition.
+- *Alternative écartée* : `drop_duplicates("cve_id")` au niveau global détruirait cette
+  information (on l'utilise ponctuellement pour les distributions, mais jamais comme
+  nettoyage du jeu principal)."""
+)
+
+code(
+    """n_dups = df.duplicated().sum()
+print("Lignes strictement dupliquées :", n_dups)
+df = df.drop_duplicates().reset_index(drop=True)
+print("Lignes après suppression :", len(df), f"(retirées : {n_lignes_brut - len(df)})")"""
+)
+
+md(
+    """### 2.4 — Validation des plages de valeurs
+
+**Choix** : garde-fou explicite — CVSS doit rester dans [0,10] et EPSS dans [0,1].
+Même si le pipeline ne devrait jamais produire de valeur hors-bornes, on **compte**
+les anomalies puis on **borne** (`clip`) par sécurité (défense en profondeur)."""
+)
+
+code(
+    """hors_cvss = df["score_cvss"].dropna().between(0, 10).eq(False).sum()
+hors_epss = df["score_epss"].dropna().between(0, 1).eq(False).sum()
+print("Valeurs CVSS hors [0,10] :", hors_cvss)
+print("Valeurs EPSS hors [0,1]  :", hors_epss)
+
+df["score_cvss"] = df["score_cvss"].clip(0, 10)
+df["score_epss"] = df["score_epss"].clip(0, 1)
+print("→ Scores bornés (clip) par sécurité.")"""
+)
+
+md(
+    """### 2.5 — Normalisation du texte
+
+**Choix** : retirer les espaces parasites en début/fin des colonnes texte. *Pourquoi* :
+les valeurs éditeur/produit sont issues de concaténations (`" ; "`) ; un espace résiduel
+créerait de faux doublons dans les classements (`"Microsoft"` ≠ `"Microsoft "`)."""
+)
+
+code(
+    """obj_cols = df.select_dtypes("object").columns
+for col in obj_cols:
+    df[col] = df[col].str.strip()
+print("Colonnes texte normalisées :", list(obj_cols))"""
+)
+
+md(
+    """### 2.6 — Récapitulatif
+
+Le jeu est prêt pour l'analyse. Le faible nombre de corrections confirme que le
+**pipeline amont était déjà robuste** : le nettoyage relève surtout du contrôle qualité."""
+)
+
+code(
+    """print("Lignes (brut → propre) :", n_lignes_brut, "→", len(df))
 print("Bulletins uniques :", df["id_anssi"].nunique())
 print("CVE uniques :", df["cve_id"].nunique())
-df.head()"""
+print(f"Mémoire : {df.memory_usage(deep=True).sum() / 1e6:.1f} Mo")
+print("\\nTypes finaux :")
+print(df.dtypes.to_string())"""
 )
 
 # ---------------------------------------------------------------- Étape 5 EDA
@@ -98,16 +232,6 @@ Ce détail impose un choix méthodologique selon la question posée :
 code(
     """df.info()
 df.describe(include="all").T"""
-)
-
-code(
-    """# Valeurs manquantes / indisponibles
-na_num = df[["score_cvss", "score_epss"]].isna().mean().mul(100).round(1)
-indispo = (df[["type_cwe", "editeur", "produit"]] == "Non disponible").mean().mul(100).round(1)
-print("% valeurs manquantes (numériques) :")
-print(na_num.to_string())
-print("\\n% 'Non disponible' (texte) :")
-print(indispo.to_string())"""
 )
 
 code(

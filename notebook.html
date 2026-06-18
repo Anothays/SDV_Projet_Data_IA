@@ -7796,7 +7796,7 @@ a.anchor-link {
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
 <main>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=680a6df0">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=f935a09f">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7809,12 +7809,13 @@ identification des CVE → enrichissement MITRE/EPSS → CSV consolidé). Il cou
 <li><strong>Étape 6</strong> — modèles de Machine Learning (1 supervisé + 1 non supervisé) avec validation.</li>
 <li><strong>Étape 7</strong> — génération d'alertes email personnalisées pour les vulnérabilités critiques.</li>
 </ul>
-<p>Périmètre des données : bulletins CERT-FR (avis + alertes) 2024–2026.</p>
+<p>Périmètre des données : bulletins CERT-FR (avis + alertes) du <code>consolidated.csv</code> livré
+(défini par <code>config.DEFAULT_YEARS</code> dans le pipeline).</p>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=562537d2">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=299d66ee">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7836,7 +7837,7 @@ du réseau/dump, et mélange les responsabilités (pipeline vs analyse).</li>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=bfdc3cc5">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=9f795eb2">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7856,17 +7857,14 @@ du réseau/dump, et mélange les responsabilités (pipeline vs analyse).</li>
 <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">"figure.figsize"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
 <span class="n">pd</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span><span class="s2">"display.max_columns"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
+<span class="c1"># Chargement BRUT : à ce stade tout est encore du texte (object).</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">"data/consolidated.csv"</span><span class="p">)</span>
+<span class="n">n_lignes_brut</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
 
-<span class="c1"># Typage : scores numériques, date en datetime.</span>
-<span class="n">df</span><span class="p">[</span><span class="s2">"score_cvss"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"score_cvss"</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">)</span>
-<span class="n">df</span><span class="p">[</span><span class="s2">"score_epss"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"score_epss"</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">)</span>
-<span class="n">df</span><span class="p">[</span><span class="s2">"date_publication"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"date_publication"</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">,</span> <span class="n">utc</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">df</span><span class="p">[</span><span class="s2">"annee"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"date_publication"</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">year</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Lignes (couples bulletin × CVE) :"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Bulletins uniques :"</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="s2">"id_anssi"</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"CVE uniques :"</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="s2">"cve_id"</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Lignes (couples bulletin × CVE) :"</span><span class="p">,</span> <span class="n">n_lignes_brut</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Colonnes :"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Types bruts (tout est 'object' = texte) :"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
 <span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -7881,8 +7879,23 @@ du réseau/dump, et mélange les responsabilités (pipeline vs analyse).</li>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Lignes (couples bulletin × CVE) : 113624
-Bulletins uniques : 2860
-CVE uniques : 31564
+Colonnes : 14
+
+Types bruts (tout est 'object' = texte) :
+id_anssi                  str
+titre_anssi               str
+type_bulletin             str
+date_publication          str
+cve_id                    str
+score_cvss            float64
+base_severity             str
+type_cwe                  str
+score_epss            float64
+lien_bulletin             str
+description               str
+editeur                   str
+produit                   str
+versions_affectees        str
 </pre>
 </div>
 </div>
@@ -7921,7 +7934,6 @@ CVE uniques : 31564
 <th>editeur</th>
 <th>produit</th>
 <th>versions_affectees</th>
-<th>annee</th>
 </tr>
 </thead>
 <tbody>
@@ -7930,7 +7942,7 @@ CVE uniques : 31564
 <td>CERTFR-2024-AVI-0001</td>
 <td>Vulnérabilité dans StormShield Network Security</td>
 <td>Avis</td>
-<td>2024-01-02 00:00:00+00:00</td>
+<td>2024-01-02T00:00:00.000000</td>
 <td>CVE-2023-46447</td>
 <td>NaN</td>
 <td>Non disponible</td>
@@ -7941,14 +7953,13 @@ CVE uniques : 31564
 <td>Non disponible</td>
 <td>Non disponible</td>
 <td>Non disponible</td>
-<td>2024</td>
 </tr>
 <tr>
 <th>1</th>
 <td>CERTFR-2024-AVI-0001</td>
 <td>Vulnérabilité dans StormShield Network Security</td>
 <td>Avis</td>
-<td>2024-01-02 00:00:00+00:00</td>
+<td>2024-01-02T00:00:00.000000</td>
 <td>CVE-2023-48795</td>
 <td>NaN</td>
 <td>Non disponible</td>
@@ -7959,14 +7970,13 @@ CVE uniques : 31564
 <td>Non disponible</td>
 <td>Non disponible</td>
 <td>NaN</td>
-<td>2024</td>
 </tr>
 <tr>
 <th>2</th>
 <td>CERTFR-2024-AVI-0001</td>
 <td>Vulnérabilité dans StormShield Network Security</td>
 <td>Avis</td>
-<td>2024-01-02 00:00:00+00:00</td>
+<td>2024-01-02T00:00:00.000000</td>
 <td>CVE-2023-51384</td>
 <td>NaN</td>
 <td>Non disponible</td>
@@ -7977,14 +7987,13 @@ CVE uniques : 31564
 <td>Non disponible</td>
 <td>Non disponible</td>
 <td>NaN</td>
-<td>2024</td>
 </tr>
 <tr>
 <th>3</th>
 <td>CERTFR-2024-AVI-0001</td>
 <td>Vulnérabilité dans StormShield Network Security</td>
 <td>Avis</td>
-<td>2024-01-02 00:00:00+00:00</td>
+<td>2024-01-02T00:00:00.000000</td>
 <td>CVE-2023-51385</td>
 <td>NaN</td>
 <td>Non disponible</td>
@@ -7995,14 +8004,13 @@ CVE uniques : 31564
 <td>Non disponible</td>
 <td>Non disponible</td>
 <td>NaN</td>
-<td>2024</td>
 </tr>
 <tr>
 <th>4</th>
 <td>CERTFR-2024-AVI-0002</td>
 <td>Multiples vulnérabilités dans Moxa OnCell G315...</td>
 <td>Avis</td>
-<td>2024-01-02 00:00:00+00:00</td>
+<td>2024-01-02T00:00:00.000000</td>
 <td>CVE-2004-2761</td>
 <td>NaN</td>
 <td>Non disponible</td>
@@ -8013,7 +8021,6 @@ CVE uniques : 31564
 <td>Non disponible</td>
 <td>Non disponible</td>
 <td>NaN</td>
-<td>2024</td>
 </tr>
 </tbody>
 </table>
@@ -8023,7 +8030,365 @@ CVE uniques : 31564
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ad24fd2c">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=91a11b38">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Nettoyage-&amp;-pr%C3%A9paration-des-donn%C3%A9es">Nettoyage &amp; préparation des données<a class="anchor-link" href="#Nettoyage-&amp;-pr%C3%A9paration-des-donn%C3%A9es">¶</a></h2><h3 id="D%C3%A9marche-%E2%80%94-d'o%C3%B9-viennent-les-imperfections">Démarche — d'où viennent les imperfections<a class="anchor-link" href="#D%C3%A9marche-%E2%80%94-d'o%C3%B9-viennent-les-imperfections">¶</a></h3><p>Les données sont produites par un <strong>enrichissement automatisé</strong> agrégeant plusieurs
+sources (bulletins ANSSI, API MITRE, API EPSS). Un CSV issu de ce flux présente des
+imperfections typiques qu'on traite ici <strong>avant</strong> toute analyse :</p>
+<ol>
+<li><strong>Types</strong> — un CSV est entièrement textuel ; les scores et dates doivent être convertis.</li>
+<li><strong>Valeurs manquantes / sentinelles</strong> — tous les champs ne sont pas toujours renseignés
+(CVE sans CVSS, produit inconnu…).</li>
+<li><strong>Doublons</strong> — vérifier qu'aucune ligne n'est dupliquée par erreur.</li>
+<li><strong>Plages de valeurs</strong> — garantir CVSS ∈ [0,10] et EPSS ∈ [0,1].</li>
+</ol>
+<blockquote>
+<p>Note : le pipeline amont (<code>enrichment.py</code>) est déjà <strong>défensif</strong> (champ absent →
+<code>None</code>/<code>"Non disponible"</code>, jamais d'exception). Le nettoyage est donc surtout de la
+<strong>validation + documentation</strong> ; on le rend néanmoins explicite et reproductible ici.</p>
+</blockquote>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=8d087856">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="2.1-%E2%80%94-Typage">2.1 — Typage<a class="anchor-link" href="#2.1-%E2%80%94-Typage">¶</a></h3><p><strong>Choix</strong> : conversion avec <code>errors="coerce"</code>. <em>Pourquoi</em> : les colonnes numériques
+contiennent des cellules vides ou textuelles (sentinelle) ; <code>coerce</code> transforme tout
+ce qui n'est pas convertible en <code>NaN</code> propre <strong>au lieu de lever une exception</strong>. La
+date est passée en <code>datetime</code> UTC, ce qui permet d'en dériver l'année.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=71a0a85f">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="p">[</span><span class="s2">"score_cvss"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"score_cvss"</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="s2">"score_epss"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"score_epss"</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="s2">"date_publication"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"date_publication"</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">,</span> <span class="n">utc</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="s2">"annee"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"date_publication"</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">year</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Types après conversion :"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="s2">"score_cvss"</span><span class="p">,</span> <span class="s2">"score_epss"</span><span class="p">,</span> <span class="s2">"date_publication"</span><span class="p">,</span> <span class="s2">"annee"</span><span class="p">]]</span><span class="o">.</span><span class="n">dtypes</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Types après conversion :
+score_cvss                      float64
+score_epss                      float64
+date_publication    datetime64[us, UTC]
+annee                             int32
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=45dca22f">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="2.2-%E2%80%94-Valeurs-manquantes-&amp;-sentinelles">2.2 — Valeurs manquantes &amp; sentinelles<a class="anchor-link" href="#2.2-%E2%80%94-Valeurs-manquantes-&amp;-sentinelles">¶</a></h3><p><strong>Choix décisif</strong> : on <strong>conserve la sentinelle <code>"Non disponible"</code></strong> pour les colonnes
+texte (CWE, éditeur, produit…) au lieu de la convertir en <code>NaN</code>.</p>
+<ul>
+<li><em>Pourquoi</em> : elle distingue explicitement « <strong>enrichissement absent</strong> » d'une vraie
+valeur, et garde les graphiques catégoriels lisibles (une part « Non disponible »
+est une information en soi).</li>
+<li><em>Alternative écartée</em> : tout passer en <code>NaN</code>. Cela uniformiserait le traitement mais
+ferait perdre cette distinction et compliquerait les filtres <code>!= "Non disponible"</code>
+utilisés dans toute la suite.</li>
+<li>Pour les colonnes <strong>numériques</strong>, l'absence est déjà un <code>NaN</code> (cf. 2.1).</li>
+</ul>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=d004afc0">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">na_num</span> <span class="o">=</span> <span class="n">df</span><span class="p">[[</span><span class="s2">"score_cvss"</span><span class="p">,</span> <span class="s2">"score_epss"</span><span class="p">]]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">txt_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"type_cwe"</span><span class="p">,</span> <span class="s2">"editeur"</span><span class="p">,</span> <span class="s2">"produit"</span><span class="p">,</span> <span class="s2">"versions_affectees"</span><span class="p">,</span> <span class="s2">"description"</span><span class="p">]</span>
+<span class="n">indispo</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">txt_cols</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"Non disponible"</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"% NaN (colonnes numériques) :"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">na_num</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">% 'Non disponible' (colonnes texte) :"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">indispo</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>% NaN (colonnes numériques) :
+score_cvss    64.3
+score_epss     0.9
+
+% 'Non disponible' (colonnes texte) :
+type_cwe              79.7
+editeur                7.2
+produit                4.7
+versions_affectees     2.3
+description            0.9
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=9807163a">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="2.3-%E2%80%94-Doublons">2.3 — Doublons<a class="anchor-link" href="#2.3-%E2%80%94-Doublons">¶</a></h3><p><strong>Choix</strong> : on ne supprime <strong>que les lignes strictement identiques</strong> sur toutes les
+colonnes.</p>
+<ul>
+<li><em>Pourquoi</em> : une ligne = un couple (bulletin × CVE). Une même CVE citée par plusieurs
+bulletins apparaît <strong>légitimement</strong> plusieurs fois — c'est l'information d'exposition.</li>
+<li><em>Alternative écartée</em> : <code>drop_duplicates("cve_id")</code> au niveau global détruirait cette
+information (on l'utilise ponctuellement pour les distributions, mais jamais comme
+nettoyage du jeu principal).</li>
+</ul>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=377545dc">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">n_dups</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">duplicated</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Lignes strictement dupliquées :"</span><span class="p">,</span> <span class="n">n_dups</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Lignes après suppression :"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span> <span class="sa">f</span><span class="s2">"(retirées : </span><span class="si">{</span><span class="n">n_lignes_brut</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Lignes strictement dupliquées : 0
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Lignes après suppression : 113624 (retirées : 0)
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=fa14e12f">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="2.4-%E2%80%94-Validation-des-plages-de-valeurs">2.4 — Validation des plages de valeurs<a class="anchor-link" href="#2.4-%E2%80%94-Validation-des-plages-de-valeurs">¶</a></h3><p><strong>Choix</strong> : garde-fou explicite — CVSS doit rester dans [0,10] et EPSS dans [0,1].
+Même si le pipeline ne devrait jamais produire de valeur hors-bornes, on <strong>compte</strong>
+les anomalies puis on <strong>borne</strong> (<code>clip</code>) par sécurité (défense en profondeur).</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=b1a9518d">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">hors_cvss</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"score_cvss"</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="n">hors_epss</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"score_epss"</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Valeurs CVSS hors [0,10] :"</span><span class="p">,</span> <span class="n">hors_cvss</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Valeurs EPSS hors [0,1]  :"</span><span class="p">,</span> <span class="n">hors_epss</span><span class="p">)</span>
+
+<span class="n">df</span><span class="p">[</span><span class="s2">"score_cvss"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"score_cvss"</span><span class="p">]</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="s2">"score_epss"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"score_epss"</span><span class="p">]</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"→ Scores bornés (clip) par sécurité."</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Valeurs CVSS hors [0,10] : 0
+Valeurs EPSS hors [0,1]  : 0
+→ Scores bornés (clip) par sécurité.
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=51d6a626">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="2.5-%E2%80%94-Normalisation-du-texte">2.5 — Normalisation du texte<a class="anchor-link" href="#2.5-%E2%80%94-Normalisation-du-texte">¶</a></h3><p><strong>Choix</strong> : retirer les espaces parasites en début/fin des colonnes texte. <em>Pourquoi</em> :
+les valeurs éditeur/produit sont issues de concaténations (<code>" ; "</code>) ; un espace résiduel
+créerait de faux doublons dans les classements (<code>"Microsoft"</code> ≠ <code>"Microsoft "</code>).</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=f72d9b0a">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">obj_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="s2">"object"</span><span class="p">)</span><span class="o">.</span><span class="n">columns</span>
+<span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">obj_cols</span><span class="p">:</span>
+    <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Colonnes texte normalisées :"</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">obj_cols</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Colonnes texte normalisées : ['id_anssi', 'titre_anssi', 'type_bulletin', 'cve_id', 'base_severity', 'type_cwe', 'lien_bulletin', 'description', 'editeur', 'produit', 'versions_affectees']
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=08ba50a9">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="2.6-%E2%80%94-R%C3%A9capitulatif">2.6 — Récapitulatif<a class="anchor-link" href="#2.6-%E2%80%94-R%C3%A9capitulatif">¶</a></h3><p>Le jeu est prêt pour l'analyse. Le faible nombre de corrections confirme que le
+<strong>pipeline amont était déjà robuste</strong> : le nettoyage relève surtout du contrôle qualité.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=a865bb16">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"Lignes (brut → propre) :"</span><span class="p">,</span> <span class="n">n_lignes_brut</span><span class="p">,</span> <span class="s2">"→"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Bulletins uniques :"</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="s2">"id_anssi"</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"CVE uniques :"</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="s2">"cve_id"</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mémoire : </span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">memory_usage</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e6</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> Mo"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Types finaux :"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">dtypes</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Lignes (brut → propre) : 113624 → 113624
+Bulletins uniques : 2860
+CVE uniques : 31564
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Mémoire : 232.7 Mo
+
+Types finaux :
+id_anssi                              str
+titre_anssi                           str
+type_bulletin                         str
+date_publication      datetime64[us, UTC]
+cve_id                                str
+score_cvss                        float64
+base_severity                         str
+type_cwe                              str
+score_epss                        float64
+lien_bulletin                         str
+description                           str
+editeur                               str
+produit                               str
+versions_affectees                    str
+annee                               int32
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=7bf1a51b">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8043,12 +8408,12 @@ conclusions faussées sur la gravité moyenne et les types de failles.</li>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=d2aa4614">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=231611fc">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">df</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
@@ -8091,7 +8456,7 @@ memory usage: 12.6 MB
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -8142,7 +8507,7 @@ memory usage: 12.6 MB
 <tr>
 <th>titre_anssi</th>
 <td>113624</td>
-<td>641</td>
+<td>633</td>
 <td>Multiples vulnérabilités dans le noyau Linux d...</td>
 <td>28710</td>
 <td>NaN</td>
@@ -8310,7 +8675,7 @@ memory usage: 12.6 MB
 <tr>
 <th>versions_affectees</th>
 <td>109262</td>
-<td>14092</td>
+<td>14087</td>
 <td>Non disponible</td>
 <td>2592</td>
 <td>NaN</td>
@@ -8342,52 +8707,12 @@ memory usage: 12.6 MB
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=7e1fb17f">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=4e2ec8a6">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Valeurs manquantes / indisponibles</span>
-<span class="n">na_num</span> <span class="o">=</span> <span class="n">df</span><span class="p">[[</span><span class="s2">"score_cvss"</span><span class="p">,</span> <span class="s2">"score_epss"</span><span class="p">]]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">indispo</span> <span class="o">=</span> <span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="s2">"type_cwe"</span><span class="p">,</span> <span class="s2">"editeur"</span><span class="p">,</span> <span class="s2">"produit"</span><span class="p">]]</span> <span class="o">==</span> <span class="s2">"Non disponible"</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"% valeurs manquantes (numériques) :"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">na_num</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">% 'Non disponible' (texte) :"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">indispo</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>% valeurs manquantes (numériques) :
-score_cvss    64.3
-score_epss     0.9
-
-% 'Non disponible' (texte) :
-type_cwe    79.7
-editeur      7.2
-produit      4.7
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=91f04338">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Vue au niveau vulnérabilité (1 ligne par CVE)</span>
@@ -8445,7 +8770,7 @@ Name: count, dtype: int64
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=c4b05e26">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=bb37821d">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8467,12 +8792,12 @@ utilisent <strong><code>df</code></strong> complet (volume d'exposition).</li>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=775f5547">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=6bb61f1e">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># 1) Histogramme des scores CVSS</span>
@@ -8498,12 +8823,12 @@ utilisent <strong><code>df</code></strong> complet (volume d'exposition).</li>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=00cf5a23">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=79f160c5">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># 2) Répartition des gravités (base_severity)</span>
@@ -8531,12 +8856,12 @@ utilisent <strong><code>df</code></strong> complet (volume d'exposition).</li>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=879076a8">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=0f62e5d5">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># 3) Camembert des types CWE les plus fréquents (top 10)</span>
@@ -8563,12 +8888,12 @@ utilisent <strong><code>df</code></strong> complet (volume d'exposition).</li>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=23e7a54a">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=efbc7e88">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># 4) Courbe des scores EPSS triés (probabilité d'exploitation)</span>
@@ -8597,7 +8922,7 @@ utilisent <strong><code>df</code></strong> complet (volume d'exposition).</li>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=2e6453f6">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6f3c286d">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8607,12 +8932,12 @@ utilisent <strong><code>df</code></strong> complet (volume d'exposition).</li>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=15b4f3b0">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=902f7e6f">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># 5) Top 15 éditeurs les plus affectés</span>
@@ -8639,12 +8964,12 @@ utilisent <strong><code>df</code></strong> complet (volume d'exposition).</li>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=7e87d444">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=af3e8886">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># 6) Top 15 produits les plus affectés</span>
@@ -8672,7 +8997,7 @@ utilisent <strong><code>df</code></strong> complet (volume d'exposition).</li>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6716b9d9">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=048e6bb6">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8684,12 +9009,12 @@ en montre la forme (et révèle les CVE « graves mais peu exploitées » et inv
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=105341b8">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=e82c2d64">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># 7) Heatmap de corrélation CVSS / EPSS</span>
@@ -8715,12 +9040,12 @@ en montre la forme (et révèle les CVE « graves mais peu exploitées » et inv
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=b4cf92e7">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=837c4c87">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [17]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># 8) Nuage de points CVSS vs EPSS</span>
@@ -8748,7 +9073,7 @@ en montre la forme (et révèle les CVE « graves mais peu exploitées » et inv
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=06f24749">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=2b5fa565">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8758,12 +9083,12 @@ en montre la forme (et révèle les CVE « graves mais peu exploitées » et inv
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=45e6eba1">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=b1e1f7a4">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [18]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># 9) Courbe cumulative des vulnérabilités dans le temps</span>
@@ -8791,12 +9116,12 @@ en montre la forme (et révèle les CVE « graves mais peu exploitées » et inv
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=93deb7a9">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=bbad94ee">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [19]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># 10) Boxplot des scores CVSS par éditeur (top 8 éditeurs)</span>
@@ -8824,12 +9149,12 @@ en montre la forme (et révèle les CVE « graves mais peu exploitées » et inv
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=f69df628">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=950c96ff">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [20]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># 11) Vulnérabilités par éditeur et type de bulletin (avis vs alerte)</span>
@@ -8859,7 +9184,7 @@ en montre la forme (et révèle les CVE « graves mais peu exploitées » et inv
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=7fe3552a">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=0f925c4e">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8881,12 +9206,12 @@ gravité à partir d'autres signaux (probabilité d'exploitation, type de faille
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=47d7b4b4">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=9625c6c8">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [21]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">train_test_split</span><span class="p">,</span> <span class="n">cross_val_score</span>
@@ -8933,7 +9258,7 @@ gravité à partir d'autres signaux (probabilité d'exploitation, type de faille
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=24a2333d">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=fa8fe005">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8958,12 +9283,12 @@ mais raterait les classes rares qui nous intéressent).</li>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=c70f1890">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=9bbf8a45">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [17]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [22]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># --- Supervisé : Random Forest ---</span>
@@ -9006,12 +9331,12 @@ weighted avg       0.59      0.52      0.55      4885
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=92a84b11">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=6cbd50cd">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [18]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [23]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Matrice de confusion</span>
@@ -9038,12 +9363,12 @@ weighted avg       0.59      0.52      0.55      4885
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=657aaacc">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=e8932885">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [19]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [24]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Validation croisée + importance des variables</span>
@@ -9081,7 +9406,7 @@ weighted avg       0.59      0.52      0.55      4885
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=4d1881fe">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=75128018">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9105,12 +9430,12 @@ finesse/interprétabilité assumé.</li>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=1b69e5e4">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=cf065c07">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [20]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [25]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># --- Non supervisé : KMeans sur (CVSS, EPSS) ---</span>
@@ -9153,12 +9478,12 @@ finesse/interprétabilité assumé.</li>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=6f79dd15">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=4dccea0a">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [21]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [26]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># KMeans final (k=4) + interprétation des clusters</span>
@@ -9207,7 +9532,7 @@ cluster
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=73f79e4d">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=1a8f5426">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9226,7 +9551,7 @@ et des clusters « gravité élevée mais faible exploitabilité » moins urgent
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=7fcd2077">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=558e8e64">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9239,7 +9564,7 @@ de mail personnalisé. L'envoi SMTP est volontairement laissé optionnel (cf. su
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ba5bf119">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=979f7790">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9258,12 +9583,12 @@ envoi réel exposerait des identifiants en clair. On fournit la fonction prête 
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=25f748f2">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=91c9fd8e">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [22]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [27]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">CVSS_SEUIL</span> <span class="o">=</span> <span class="mf">9.0</span>   <span class="c1"># gravité critique</span>
@@ -9291,7 +9616,7 @@ envoi réel exposerait des identifiants en clair. On fournit la fonction prête 
 </div>
 </div>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[22]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[27]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -9428,12 +9753,12 @@ envoi réel exposerait des identifiants en clair. On fournit la fonction prête 
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=e6924c8c">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=bebe20f9">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [23]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [28]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_alert_email</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
@@ -9560,12 +9885,12 @@ l'exposition de vos systèmes.
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=1b8123d2">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=dfe91016">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [24]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [29]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Envoi SMTP (OPTIONNEL — désactivé). À activer avec un mot de passe d'application.</span>
@@ -9600,7 +9925,7 @@ l'exposition de vos systèmes.
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=05ca1d58">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=b5370567">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
