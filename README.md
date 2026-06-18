@@ -10,19 +10,30 @@ fichier CSV exploitable.
 > (étape 6) et les alertes email (étape 7) seront ajoutés dans le notebook à
 > partir du CSV produit.
 
+## Source des données
+
+Le pipeline lit en priorité le **dump local fourni** (section 8 du sujet,
+`data/Avis/`, `data/alertes/`, `data/mitre/`, `data/first/`) plutôt que
+d'interroger les flux RSS et API en direct : zéro latence, zéro charge sur
+les serveurs externes. Le réseau (avec rate-limiting) ne sert qu'en repli
+pour une CVE absente du dump.
+
 ## Architecture
 
 ```
 src/anssi_cve/
-  config.py          # URLs, délais, chemins
-  http_client.py     # accès réseau responsable : rate-limit + retry + cache disque
-  rss.py             # étape 1 : flux RSS avis + alertes
+  config.py          # URLs, délais, chemins (live + dump local)
+  http_client.py     # repli réseau responsable : rate-limit + retry + cache disque
+  local_source.py    # étape 1+2 : lecture des bulletins depuis data/Avis + data/alertes
+  rss.py              # variante live (flux RSS), non utilisée par défaut
   cve_extraction.py  # étape 2 : CVE référencées dans chaque bulletin
-  enrichment.py      # étape 3 : enrichissement MITRE (CVSS/CWE) + EPSS
+  enrichment.py      # étape 3 : enrichissement MITRE (CVSS/CWE) + EPSS, local puis API
   consolidation.py   # étape 4 : DataFrame pandas (1 ligne par couple bulletin × CVE)
-  pipeline.py        # orchestration end-to-end → data/consolidated.csv
+  pipeline.py         # orchestration end-to-end → data/consolidated.csv
 data/
-  cache/             # cache JSON des ressources externes (régénérable, non versionné)
+  Avis/, alertes/    # dump local des bulletins ANSSI (fourni)
+  mitre/, first/     # dump local des réponses API CVE/EPSS (fourni)
+  cache/             # cache JSON des appels réseau de repli (régénérable, non versionné)
   consolidated.csv   # livrable : données consolidées
 main.py              # point d'entrée
 ```
@@ -41,13 +52,15 @@ uv sync
 uv run python -m anssi_cve.pipeline   # ou : uv run python main.py
 ```
 
-Le pipeline écrit `data/consolidated.csv`. Le premier run télécharge les
-ressources (avec un délai de 2 s entre requêtes) ; les suivants lisent le cache
-local et sont quasi instantanés.
+Le pipeline lit le dump local fourni (`data/Avis/`, `data/alertes/`,
+`data/mitre/`, `data/first/`) et écrit `data/consolidated.csv`. Aucun appel
+réseau n'est nécessaire si le dump couvre tous les bulletins/CVE (~36 s pour
+les 4 103 bulletins / 37 287 CVE fournis).
 
 ## Accès responsable aux ressources externes
 
-Conformément à la section 8 du sujet :
+Conformément à la section 8 du sujet, le code reste capable d'aller chercher
+en direct un bulletin ou une CVE absente du dump local :
 
 - **Rate limiting** : `REQUEST_DELAY = 2.0` s appliqué avant chaque appel réseau
   (`http_client._respect_delay`).

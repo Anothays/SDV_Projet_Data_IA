@@ -2,14 +2,31 @@
 
 Toutes les extractions sont défensives : un champ absent ne casse pas le
 pipeline mais renvoie ``None`` (numérique) ou ``"Non disponible"`` (texte).
+
+Le dump local fourni (section 8 du sujet) contient déjà les réponses MITRE et
+EPSS pour chaque CVE sous ``data/mitre/<cve_id>`` et ``data/first/<cve_id>``
+(sans extension). On les lit en priorité ; le réseau ne sert que de repli
+pour une CVE absente du dump.
 """
 
+import json
 from typing import Optional
 
 from . import config
 from .http_client import get_json
 
 UNAVAILABLE = "Non disponible"
+
+
+def _read_local(directory, cve_id: str) -> Optional[dict]:
+    path = directory / cve_id
+    if not path.is_file():
+        return None
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return None
 
 
 def _clean(value: Optional[str]) -> str:
@@ -94,8 +111,10 @@ def _extract_affected(data: dict) -> list[dict]:
 
 
 def enrich_mitre(cve_id: str) -> dict:
-    """Enrichit une CVE via l'API MITRE. Renvoie toujours un dict complet."""
-    data = get_json(config.MITRE_API.format(cve_id=cve_id), _mitre_cache(cve_id))
+    """Enrichit une CVE via le dump local MITRE, ou l'API en repli."""
+    data = _read_local(config.LOCAL_MITRE_DIR, cve_id)
+    if data is None:
+        data = get_json(config.MITRE_API.format(cve_id=cve_id), _mitre_cache(cve_id))
     if not data:
         return {
             "description": UNAVAILABLE,
@@ -116,7 +135,9 @@ def enrich_mitre(cve_id: str) -> dict:
 
 def enrich_epss(cve_id: str) -> Optional[float]:
     """Renvoie le score EPSS (probabilité d'exploitation) ou ``None``."""
-    data = get_json(config.EPSS_API.format(cve_id=cve_id), _first_cache(cve_id))
+    data = _read_local(config.LOCAL_FIRST_DIR, cve_id)
+    if data is None:
+        data = get_json(config.EPSS_API.format(cve_id=cve_id), _first_cache(cve_id))
     if not data:
         return None
     epss_data = data.get("data", []) or []

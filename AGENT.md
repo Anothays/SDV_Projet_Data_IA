@@ -7,9 +7,9 @@ avant d'agir.
 
 TD final noté (SUP DE VINCI, Data & IA 2026). Construire un outil qui :
 
-1. Extrait les bulletins de sécurité du **CERT-FR / ANSSI** (avis + alertes) via flux RSS.
+1. Extrait les bulletins de sécurité du **CERT-FR / ANSSI** (avis + alertes), depuis le **dump local fourni** (`data/Avis/`, `data/alertes/`) en priorité, flux RSS en repli.
 2. Identifie les **CVE** (Common Vulnerabilities and Exposures) citées dans chaque bulletin.
-3. Enrichit chaque CVE via API externes :
+3. Enrichit chaque CVE, depuis le dump local (`data/mitre/`, `data/first/`) en priorité, API en repli :
    - **MITRE** (`cveawg.mitre.org`) → score **CVSS** (gravité 0-10), type **CWE** (nature de la faille), description, produits affectés.
    - **EPSS / FIRST** (`api.first.org`) → **score EPSS** (probabilité d'exploitation, 0-1).
 4. Consolide le tout dans un **DataFrame pandas** exporté en **CSV**.
@@ -25,13 +25,20 @@ l'enrichissement et l'analyse.
 
 | Étape | Sujet | État |
 |---|---|---|
-| 1 | Extraction flux RSS | ✅ fait (`rss.py`) |
+| 1 | Lecture bulletins (dump local `data/Avis/` + `data/alertes/`) | ✅ fait (`local_source.py`) |
 | 2 | Extraction CVE | ✅ fait (`cve_extraction.py`) |
-| 3 | Enrichissement MITRE + EPSS | ✅ fait (`enrichment.py`) |
+| 3 | Enrichissement MITRE + EPSS (dump local `data/mitre/` + `data/first/`) | ✅ fait (`enrichment.py`) |
 | 4 | Consolidation → CSV | ✅ fait (`consolidation.py`, `pipeline.py`) |
 | 5 | Visualisation / analyse | ⏳ à faire (notebook) |
 | 6 | Machine Learning + validation | ⏳ à faire (modèles non encore choisis — à déduire de l'analyse exploratoire) |
 | 7 | Alertes & notifications email | ⏳ à faire (optionnel pour l'envoi, mais sujet + corps du mail attendus) |
+
+**Changement de plan (2026-06-18)** : le sujet fournit désormais un dump local
+complet (`data/Avis/`, `data/alertes/`, `data/mitre/`, `data/first/`, un
+fichier par bulletin/CVE sans extension). Le pipeline lit ce dump en
+priorité — `rss.py` et les appels réseau live (MITRE/EPSS) ne servent plus
+que de repli pour un bulletin/CVE absent du dump. Voir `local_source.py` et
+section 5 ci-dessous.
 
 **Décision en attente** : choix des modèles ML. À trancher *après* l'analyse
 exploratoire des données du CSV, pas avant.
@@ -40,22 +47,26 @@ exploratoire des données du CSV, pas avant.
 
 ```
 src/anssi_cve/
-  config.py          # URLs des feeds/API, délais, chemins (source de vérité config)
-  http_client.py     # accès réseau responsable : rate-limit + retry + cache disque
-  rss.py             # étape 1 : flux RSS avis + alertes → liste de bulletins
+  config.py          # URLs des feeds/API, délais, chemins (live + dump local)
+  http_client.py     # accès réseau responsable : rate-limit + retry + cache disque (repli)
+  local_source.py    # étape 1 : lecture data/Avis + data/alertes → liste de bulletins (JSON déjà inclus)
+  rss.py             # variante live (flux RSS), non utilisée par défaut depuis le dump local
   cve_extraction.py  # étape 2 : JSON du bulletin → liste de CVE
-  enrichment.py      # étape 3 : enrich_mitre() + enrich_epss() (défensifs)
+  enrichment.py      # étape 3 : enrich_mitre() + enrich_epss(), dump local puis API (défensifs)
   consolidation.py   # étape 4 : build_dataframe(), severity_from_cvss(), COLUMNS
-  pipeline.py        # orchestration end-to-end → data/consolidated.csv
+  pipeline.py         # orchestration end-to-end → data/consolidated.csv
 data/
-  cache/             # cache JSON (bulletins/, mitre/, first/) — non versionné
+  Avis/, alertes/    # dump local des bulletins ANSSI (fourni, section 8 du sujet)
+  mitre/, first/     # dump local des réponses API CVE/EPSS (fourni)
+  cache/             # cache JSON du repli réseau (bulletins/, mitre/, first/) — non versionné
   consolidated.csv   # livrable 2 (généré)
 main.py              # point d'entrée → anssi_cve.pipeline.run()
 notebook.ipynb       # réservé aux étapes 5-6 (chargera le CSV) — ne pas y mettre le pipeline
 ```
 
-Flux de données : `rss` → liens bulletins → `cve_extraction` (JSON) → CVE →
-`enrichment` (MITRE + EPSS) → `consolidation` (1 ligne par couple bulletin × CVE) → CSV.
+Flux de données : `local_source` (lecture `data/Avis`+`data/alertes`, JSON déjà
+chargé) → `cve_extraction` (CVE) → `enrichment` (MITRE + EPSS, dump local puis
+API en repli) → `consolidation` (1 ligne par couple bulletin × CVE) → CSV.
 
 ## 4. Conventions du dépôt (à respecter)
 
@@ -67,17 +78,23 @@ Flux de données : `rss` → liens bulletins → `cve_extraction` (JSON) → CVE
 
 ## 5. Accès responsable aux ressources externes (section 8 du sujet — IMPORTANT)
 
-Tout accès réseau **doit** passer par `http_client.get_json()`. Ne pas appeler
+Le dump local fourni par l'enseignant (`data/Avis/`, `data/alertes/`,
+`data/mitre/`, `data/first/`) est **prioritaire** : `local_source.py` et
+`enrichment._read_local` lisent ces fichiers directement, sans aucun appel
+réseau. Le réseau ne sert plus que de **repli** pour un bulletin ou une CVE
+absente du dump (cas peu probable, dump quasi complet : 4103 bulletins /
+37287 CVE).
+
+Tout accès réseau (repli) **doit** passer par `http_client.get_json()`. Ne pas appeler
 `requests` directement ailleurs. Garanties fournies :
 
 - **Rate-limiting** : `REQUEST_DELAY = 2.0 s` (config) appliqué avant chaque appel réseau réel.
 - **Cache disque** sous `data/cache/` : une ressource déjà téléchargée n'est pas redemandée. Une CVE partagée par plusieurs bulletins n'est enrichie qu'une fois (cache mémoire dans `pipeline.run`).
 - **Retry + backoff** sur erreurs réseau / `429` / `5xx`.
 
-Le sujet prévoit aussi des **snapshots locaux pré-téléchargés** (`alertes/`,
-`avis/`, `mitre/`, `first/`) éventuellement fournis par l'enseignant. S'ils
-arrivent, le cache local joue déjà ce rôle ; l'approche (consulter les feeds,
-repérer les mises à jour) ne doit pas changer.
+Ne pas retirer ce repli réseau : il garde le pipeline correct si le dump est
+incomplet ou si de nouveaux bulletins/CVE apparaissent après l'extraction du
+dump.
 
 ## 6. Lancer / vérifier
 
@@ -86,7 +103,9 @@ uv sync                              # installer deps + package
 uv run python -m anssi_cve.pipeline  # exécuter le pipeline → data/consolidated.csv
 ```
 
-Premier run : lent (délai 2 s + téléchargements). Runs suivants : rapides (cache).
+Run typique : ~36 s pour 4103 bulletins / 37287 CVE, zéro appel réseau (tout
+vient du dump local). Plus lent uniquement si des bulletins/CVE manquent au
+dump (repli réseau avec délai 2 s).
 Vérifications attendues :
 - CSV avec les 14 colonnes de `consolidation.COLUMNS`.
 - ≥ 1 ligne par bulletin, plusieurs lignes pour un bulletin multi-CVE.

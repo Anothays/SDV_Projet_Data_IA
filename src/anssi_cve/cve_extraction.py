@@ -15,7 +15,14 @@ def _cache_path(bulletin_id: str):
 
 
 def fetch_bulletin_json(bulletin: dict) -> dict | None:
-    """Télécharge (ou lit en cache) le JSON détaillé d'un bulletin."""
+    """Télécharge (ou lit en cache) le JSON détaillé d'un bulletin.
+
+    Repli réseau utilisé uniquement si le bulletin ne provient pas déjà du
+    dump local (cf. ``local_source.fetch_bulletins``, qui fournit directement
+    la clé ``bulletin_json``).
+    """
+    if "bulletin_json" in bulletin:
+        return bulletin["bulletin_json"]
     return get_json(bulletin["json_url"], _cache_path(bulletin["id_anssi"]))
 
 

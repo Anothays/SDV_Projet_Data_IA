@@ -8,14 +8,14 @@ from . import config
 from .consolidation import build_dataframe, build_row
 from .cve_extraction import extract_cves, fetch_bulletin_json
 from .enrichment import enrich_epss, enrich_mitre
-from .rss import fetch_bulletins
+from .local_source import fetch_bulletins
 
 
 def run(output_csv=config.OUTPUT_CSV) -> pd.DataFrame:
     """Exécute le pipeline complet et écrit le DataFrame consolidé en CSV."""
-    print("[1/4] Extraction des flux RSS (avis + alertes)...")
+    print("[1/4] Lecture des bulletins ANSSI (dump local data/Avis + data/alertes)...")
     bulletins = fetch_bulletins()
-    print(f"      {len(bulletins)} bulletins récupérés.")
+    print(f"      {len(bulletins)} bulletins chargés.")
 
     # Caches d'enrichissement en mémoire : une CVE partagée par plusieurs
     # bulletins n'est interrogée qu'une seule fois.

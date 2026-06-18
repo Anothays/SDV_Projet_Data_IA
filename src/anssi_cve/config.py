@@ -23,7 +23,18 @@ DATA_DIR = ROOT_DIR / "data"
 CACHE_DIR = DATA_DIR / "cache"
 OUTPUT_CSV = DATA_DIR / "consolidated.csv"
 
-# Sous-dossiers de cache par type de ressource.
+# Sous-dossiers de cache par type de ressource (utilisés pour les CVE/bulletins
+# absents du jeu de données local, cf. ci-dessous).
 CACHE_BULLETIN_DIR = CACHE_DIR / "bulletins"  # JSON des avis/alertes ANSSI
 CACHE_MITRE_DIR = CACHE_DIR / "mitre"          # réponses API MITRE
 CACHE_FIRST_DIR = CACHE_DIR / "first"          # réponses API EPSS/FIRST
+
+# --- Jeu de données pré-téléchargé (section 8 du sujet) ---
+# Fourni par le prof : un fichier par bulletin/CVE, sans extension, au format
+# JSON identique à celui des API live. Utilisé en priorité pour éviter de
+# solliciter les serveurs externes ; le réseau ne sert que de repli pour les
+# bulletins/CVE absents de ce dump.
+LOCAL_AVIS_DIR = DATA_DIR / "Avis"
+LOCAL_ALERTES_DIR = DATA_DIR / "alertes"
+LOCAL_MITRE_DIR = DATA_DIR / "mitre"
+LOCAL_FIRST_DIR = DATA_DIR / "first"
