@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, render
 
 from .alerts import alert_cves, build_alert_email
 from .charts import build_dashboard_charts
-from .models import SEVERITY_ORDER, Bulletin, Cve
+from .models import SEVERITY_ORDER, UNAVAILABLE, Bulletin, Cve
 
 PAGE_SIZE = 25
 
@@ -31,6 +31,17 @@ def _published_years() -> list[int]:
     """Années de publication présentes en base (pour le filtre déroulant)."""
     dates = Bulletin.objects.exclude(date_publication=None).dates("date_publication", "year")
     return sorted({d.year for d in dates}, reverse=True)
+
+
+def _editeurs() -> list[str]:
+    """Valeurs distinctes d'éditeur présentes en base (pour le filtre déroulant)."""
+    return list(
+        Cve.objects.exclude(editeur="")
+        .exclude(editeur=UNAVAILABLE)
+        .order_by("editeur")
+        .values_list("editeur", flat=True)
+        .distinct()
+    )
 
 
 def dashboard(request):
@@ -65,7 +76,7 @@ def vulnerability_list(request):
     if filters["severity"]:
         qs = qs.filter(base_severity=filters["severity"])
     if filters["editeur"]:
-        qs = qs.filter(editeur__icontains=filters["editeur"])
+        qs = qs.filter(editeur=filters["editeur"])
     if filters["cvss_min"]:
         try:
             qs = qs.filter(score_cvss__gte=float(filters["cvss_min"]))
@@ -90,6 +101,7 @@ def vulnerability_list(request):
         "filters": filters,
         "severities": SEVERITY_ORDER,
         "years": _published_years(),
+        "editeurs": _editeurs(),
         "base_query": _querystring_excluding(request, "page"),
         "base_query_sort": _querystring_excluding(request, "page", "sort"),
         "sort": sort,
