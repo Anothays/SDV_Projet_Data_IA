@@ -7,7 +7,7 @@ avant d'agir.
 
 TD final noté (SUP DE VINCI, Data & IA 2026). Construire un outil qui :
 
-1. Extrait les bulletins de sécurité du **CERT-FR / ANSSI** (avis + alertes), depuis le **dump local fourni** (`data/Avis/`, `data/alertes/`) en priorité, flux RSS en repli.
+1. Extrait les bulletins de sécurité du **CERT-FR / ANSSI** (avis + alertes), depuis le **dump local fourni** (`data/Avis/`, `data/alertes/`).
 2. Identifie les **CVE** (Common Vulnerabilities and Exposures) citées dans chaque bulletin.
 3. Enrichit chaque CVE, depuis le dump local (`data/mitre/`, `data/first/`) en priorité, API en repli :
    - **MITRE** (`cveawg.mitre.org`) → score **CVSS** (gravité 0-10), type **CWE** (nature de la faille), description, produits affectés.
@@ -33,12 +33,11 @@ l'enrichissement et l'analyse.
 | 6 | Machine Learning + validation | ✅ fait (`notebook.ipynb` : RandomForest gravité + KMeans) |
 | 7 | Alertes & notifications email | ✅ fait (`notebook.ipynb` : sujet + corps ; envoi SMTP optionnel non appelé) |
 
-**Changement de plan (2026-06-18)** : le sujet fournit désormais un dump local
-complet (`data/Avis/`, `data/alertes/`, `data/mitre/`, `data/first/`, un
-fichier par bulletin/CVE sans extension). Le pipeline lit ce dump en
-priorité — `rss.py` et les appels réseau live (MITRE/EPSS) ne servent plus
-que de repli pour un bulletin/CVE absent du dump. Voir `local_source.py` et
-section 5 ci-dessous.
+**Changement de plan (2026-06-18)** : le sujet fournit un dump local complet
+(`data/Avis/`, `data/alertes/`, `data/mitre/`, `data/first/`, un fichier par
+bulletin/CVE sans extension). Le pipeline lit **exclusivement** ce dump pour les
+bulletins (`local_source.py`) ; seul l'**enrichissement** MITRE/EPSS garde un
+repli réseau pour une CVE absente du dump. Voir section 5 ci-dessous.
 
 **Modèles ML retenus (2026-06-18)** : supervisé = classification de
 `base_severity` par RandomForest, *sans* `score_cvss` en variable (fuite de
@@ -49,8 +48,8 @@ cible : la gravité en est dérivée) → features `score_epss` + `type_cwe` +
 
 **Périmètre / config** : `OFFLINE_ONLY = True` (aucun réseau) et
 `DEFAULT_YEARS = None` (dump local complet, 2021-2026 — c'est le périmètre
-du `consolidated.csv` livré et du notebook). Le notebook est construit par
-`build_notebook.py` puis exécuté ; export `notebook.html`.
+du `consolidated.csv` livré et du notebook). Le notebook est édité directement
+puis exécuté (`nbconvert --execute`) ; export `notebook.html`.
 
 **Livraison (2026-06-18)** : remise sous forme d'**archive** au professeur,
 pas via push git — `data/consolidated.csv` (exclu de `.gitignore`, comme
@@ -77,7 +76,6 @@ src/anssi_cve/
   config.py          # URLs des feeds/API, délais, chemins (live + dump local)
   http_client.py     # accès réseau responsable : rate-limit + retry + cache disque (repli)
   local_source.py    # étape 1 : lecture data/Avis + data/alertes → liste de bulletins (JSON déjà inclus)
-  rss.py             # variante live (flux RSS), non utilisée par défaut depuis le dump local
   cve_extraction.py  # étape 2 : JSON du bulletin → liste de CVE
   enrichment.py      # étape 3 : enrich_mitre() + enrich_epss(), dump local puis API (défensifs)
   consolidation.py   # étape 4 : build_dataframe(), severity_from_cvss(), COLUMNS
@@ -106,11 +104,11 @@ API en repli) → `consolidation` (1 ligne par couple bulletin × CVE) → CSV.
 ## 5. Accès responsable aux ressources externes (section 8 du sujet — IMPORTANT)
 
 Le dump local fourni par l'enseignant (`data/Avis/`, `data/alertes/`,
-`data/mitre/`, `data/first/`) est **prioritaire** : `local_source.py` et
+`data/mitre/`, `data/first/`) fait foi : `local_source.py` et
 `enrichment._read_local` lisent ces fichiers directement, sans aucun appel
-réseau. Le réseau ne sert plus que de **repli** pour un bulletin ou une CVE
-absente du dump (cas peu probable, dump quasi complet : 4103 bulletins /
-37287 CVE).
+réseau. Les bulletins viennent **exclusivement** du dump ; seul
+l'**enrichissement** MITRE/EPSS garde un **repli réseau** pour une CVE absente
+du dump (cas peu probable, dump quasi complet : 4103 bulletins / 37287 CVE).
 
 Tout accès réseau (repli) **doit** passer par `http_client.get_json()`. Ne pas appeler
 `requests` directement ailleurs. Garanties fournies :
@@ -119,9 +117,8 @@ Tout accès réseau (repli) **doit** passer par `http_client.get_json()`. Ne pas
 - **Cache disque** sous `data/cache/` : une ressource déjà téléchargée n'est pas redemandée. Une CVE partagée par plusieurs bulletins n'est enrichie qu'une fois (cache mémoire dans `pipeline.run`).
 - **Retry + backoff** sur erreurs réseau / `429` / `5xx`.
 
-Ne pas retirer ce repli réseau : il garde le pipeline correct si le dump est
-incomplet ou si de nouveaux bulletins/CVE apparaissent après l'extraction du
-dump.
+Ne pas retirer ce repli réseau (enrichissement) : il garde le pipeline correct
+si une CVE du dump n'a pas sa réponse MITRE/EPSS pré-téléchargée.
 
 ## 6. Lancer / vérifier
 
@@ -162,6 +159,5 @@ Une ligne = un couple (bulletin × CVE). Colonnes (ordre figé dans `COLUMNS`) :
 
 - Les réponses MITRE renvoient souvent `"n/a"` (chaîne) pour vendor/product → normalisé via `enrichment._clean`.
 - Le score CVSS peut être absent, ou dans une version différente (`cvssV3_1`, `cvssV3_0`, `cvssV4_0`, `cvssV2`) et parfois dans le conteneur `adp` plutôt que `cna` → géré par `_iter_metrics` + `_extract_cvss`.
-- L'identifiant ANSSI se lit dans le lien RSS (regex `CERTFR-AAAA-(ALE|AVI)-NNN`) ou la clé `reference` du JSON.
-- L'URL JSON d'un bulletin = lien du bulletin + `json/`.
+- L'identifiant ANSSI se lit dans la clé `reference` du JSON (repli : nom du fichier du dump).
 - Plagiat surveillé : le travail doit rester authentique (contrainte du sujet).

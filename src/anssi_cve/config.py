@@ -2,10 +2,6 @@
 
 from pathlib import Path
 
-# --- Flux RSS CERT-FR (étape 1) ---
-FEED_AVIS = "https://www.cert.ssi.gouv.fr/avis/feed/"
-FEED_ALERTE = "https://www.cert.ssi.gouv.fr/alerte/feed/"
-
 # --- API d'enrichissement (étape 3) ---
 MITRE_API = "https://cveawg.mitre.org/api/cve/{cve_id}"
 EPSS_API = "https://api.first.org/data/v1/epss?cve={cve_id}"
@@ -23,9 +19,8 @@ DATA_DIR = ROOT_DIR / "data"
 CACHE_DIR = DATA_DIR / "cache"
 OUTPUT_CSV = DATA_DIR / "consolidated.csv"
 
-# Sous-dossiers de cache par type de ressource (utilisés pour les CVE/bulletins
-# absents du jeu de données local, cf. ci-dessous).
-CACHE_BULLETIN_DIR = CACHE_DIR / "bulletins"  # JSON des avis/alertes ANSSI
+# Sous-dossiers de cache par type de ressource (utilisés pour les CVE absentes
+# du jeu de données local, cf. ci-dessous).
 CACHE_MITRE_DIR = CACHE_DIR / "mitre"          # réponses API MITRE
 CACHE_FIRST_DIR = CACHE_DIR / "first"          # réponses API EPSS/FIRST
 

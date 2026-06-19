@@ -3,27 +3,17 @@
 import json
 import re
 
-from . import config
-from .http_client import get_json
-
 # Identifiant CVE : CVE-AAAA-NNNN (4 à 7 chiffres pour le numéro).
 _CVE_PATTERN = re.compile(r"CVE-\d{4}-\d{4,7}")
 
 
-def _cache_path(bulletin_id: str):
-    return config.CACHE_BULLETIN_DIR / f"{bulletin_id}.json"
-
-
 def fetch_bulletin_json(bulletin: dict) -> dict | None:
-    """Télécharge (ou lit en cache) le JSON détaillé d'un bulletin.
+    """Renvoie le JSON détaillé d'un bulletin.
 
-    Repli réseau utilisé uniquement si le bulletin ne provient pas déjà du
-    dump local (cf. ``local_source.fetch_bulletins``, qui fournit directement
-    la clé ``bulletin_json``).
+    Fourni directement par le dump local via la clé ``bulletin_json`` (cf.
+    ``local_source.fetch_bulletins``).
     """
-    if "bulletin_json" in bulletin:
-        return bulletin["bulletin_json"]
-    return get_json(bulletin["json_url"], _cache_path(bulletin["id_anssi"]))
+    return bulletin.get("bulletin_json")
 
 
 def extract_cves(bulletin_json: dict) -> list[str]:
