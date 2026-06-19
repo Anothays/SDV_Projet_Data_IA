@@ -5,6 +5,7 @@ description = "Extraction, enrichissement (MITRE/EPSS) et analyse des avis et al
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "django>=6.0.6",
     "feedparser>=6.0.12",
     "ipykernel>=7.3.0",
     "matplotlib>=3.11.0",

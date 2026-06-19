@@ -1,0 +1,68 @@
+{% extends "vulnerabilities/base.html" %}
+{% load sort_tags %}
+{% block title %}Bulletins — Veille CVE{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Bulletins CERT-FR</h1>
+
+<form method="get" class="card card-body mb-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-4">
+      <label class="form-label small mb-1">Recherche (id / titre)</label>
+      <input type="text" name="q" value="{{ filters.q }}" class="form-control form-control-sm" placeholder="CERTFR-2024-… ou mot-clé">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label small mb-1">Type</label>
+      <select name="type" class="form-select form-select-sm">
+        <option value="">Tous</option>
+        {% for t in types %}
+          <option value="{{ t }}" {% if filters.type == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label small mb-1">Année</label>
+      <select name="annee" class="form-select form-select-sm">
+        <option value="">Toutes</option>
+        {% for y in years %}
+          <option value="{{ y }}" {% if filters.annee == y|stringformat:'s' %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+      <button type="submit" class="btn btn-primary btn-sm w-100">Filtrer</button>
+      <a href="{% url 'bulletin_list' %}" class="btn btn-outline-secondary btn-sm">Réinit.</a>
+    </div>
+  </div>
+</form>
+
+<p class="text-muted small">{{ total }} bulletin{{ total|pluralize }}.</p>
+
+<div class="table-responsive">
+  <table class="table table-sm table-hover bg-white">
+    <thead class="table-light">
+      <tr>
+        <th>Identifiant</th><th>Type</th>
+        <th>
+          <a class="text-decoration-none text-dark" href="?{{ base_query_sort }}{% if base_query_sort %}&{% endif %}sort={{ sort|toggle_sort:'date_publication' }}">Date {{ sort|sort_arrow:'date_publication' }}</a>
+        </th>
+        <th>Titre</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in page_obj %}
+      <tr>
+        <td><a href="{% url 'bulletin_detail' b.id_anssi %}">{{ b.id_anssi }}</a></td>
+        <td><span class="badge bg-light text-dark">{{ b.type_bulletin }}</span></td>
+        <td>{{ b.date_publication|date:"d/m/Y" }}</td>
+        <td>{{ b.titre_anssi }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="text-center text-muted py-4">Aucun bulletin ne correspond aux filtres.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include "vulnerabilities/_pagination.html" %}
+{% endblock %}

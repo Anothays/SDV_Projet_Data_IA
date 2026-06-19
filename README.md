@@ -110,3 +110,54 @@ Une ligne par couple (bulletin × CVE) — un bulletin multi-CVE est donc répé
 l'enrichissement MITRE. Une CVE pouvant concerner plusieurs produits, les
 valeurs distinctes sont concaténées avec `" ; "` afin de conserver une seule
 ligne par couple (bulletin × CVE). Les champs absents valent `Non disponible`.
+
+## Web app Django (étape 7 — « Pour aller loin », bonus)
+
+Application web qui rend le `consolidated.csv` consultable : **tableau de bord**
+de graphiques interactifs (Plotly, dont une répartition **avis vs alertes par
+éditeur**), **listes filtrables** de CVE et de bulletins avec pages de détail, et
+**page d'alertes** critiques (`CVSS ≥ 9` ou `EPSS ≥ 0.5` comme le notebook). Cette
+page d'alertes est **filtrable par éditeur / produit / type / année** : c'est la
+veille « sur mesure » du sujet, avec un **aperçu d'email recalculé sur la
+sélection**. Les listes CVE et alertes exposent un **export CSV des résultats
+filtrés**. Les données sont chargées dans **SQLite via l'ORM Django** (schéma
+normalisé `Bulletin` ↔ `Cve`).
+
+```
+webapp/
+  manage.py
+  anssi_web/         # projet Django (settings, urls, wsgi/asgi)
+  vulnerabilities/   # app : models, views, charts (Plotly), alerts, admin
+    management/commands/import_csv.py   # charge data/consolidated.csv → SQLite
+    templates/vulnerabilities/          # base + dashboard + listes/détails + alertes
+```
+
+Lancement (après avoir généré `data/consolidated.csv` via le pipeline) :
+
+```bash
+uv run python webapp/manage.py migrate        # crée la base SQLite
+uv run python webapp/manage.py import_csv      # importe le CSV (~126k liens)
+uv run python webapp/manage.py runserver       # http://127.0.0.1:8000/
+```
+
+Routes : `/` (tableau de bord, accessible sans connexion), `/cve/` (liste CVE),
+`/cve/<CVE-ID>/`, `/cve/export.csv` (export CSV filtré), `/bulletins/`,
+`/bulletins/<ID-ANSSI>/`, `/alertes/`, `/alertes/export.csv` (export CSV filtré).
+
+### Accès à l'interface d'administration (`/admin/`)
+
+Distincte du tableau de bord : `/admin/` est l'interface Django standard de
+consultation brute des tables (`Cve`, `Bulletin`) avec recherche, filtres et
+tri — pas les graphiques. Elle nécessite un compte superutilisateur, à créer
+une seule fois :
+
+```bash
+uv run python webapp/manage.py createsuperuser
+```
+
+Renseigner un nom d'utilisateur, un email (optionnel) et un mot de passe
+(saisie interactive, invisible). Se connecter ensuite sur
+`http://127.0.0.1:8000/admin/` avec ces identifiants.
+
+La base `webapp/db.sqlite3` est régénérable et n'est pas versionnée ; relancer
+`import_csv` la recharge (commande idempotente), sans toucher au compte admin.

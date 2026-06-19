@@ -18,4 +18,7 @@ data/cache/
 # Data files
 data/*
 
+# Web app Django (étape 7) — base SQLite régénérable via `import_csv`
+webapp/db.sqlite3
+
 .DS_Store

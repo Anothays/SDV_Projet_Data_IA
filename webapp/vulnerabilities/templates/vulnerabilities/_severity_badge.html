@@ -1,0 +1,5 @@
+{% if severity == "Critique" %}<span class="badge bg-danger">{{ severity }}</span>
+{% elif severity == "Élevée" %}<span class="badge" style="background:#ff9800;color:#fff">{{ severity }}</span>
+{% elif severity == "Moyenne" %}<span class="badge" style="background:#ffc107;color:#212529">{{ severity }}</span>
+{% elif severity == "Faible" %}<span class="badge bg-success">{{ severity }}</span>
+{% else %}<span class="badge bg-secondary">{{ severity }}</span>{% endif %}
