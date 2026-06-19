@@ -1,0 +1,44 @@
+{% extends "vulnerabilities/base.html" %}
+{% block title %}{{ bulletin.id_anssi }} — Bulletin CERT-FR{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb small">
+    <li class="breadcrumb-item"><a href="{% url 'bulletin_list' %}">Bulletins</a></li>
+    <li class="breadcrumb-item active">{{ bulletin.id_anssi }}</li>
+  </ol>
+</nav>
+
+<div class="d-flex align-items-center gap-3 mb-2">
+  <h1 class="h4 mb-0">{{ bulletin.id_anssi }}</h1>
+  <span class="badge bg-light text-dark">{{ bulletin.type_bulletin }}</span>
+  <span class="text-muted">{{ bulletin.date_publication|date:"d/m/Y" }}</span>
+</div>
+<p class="lead">{{ bulletin.titre_anssi }}</p>
+{% if bulletin.lien_bulletin %}
+<p><a href="{{ bulletin.lien_bulletin }}" target="_blank" rel="noopener">Voir le bulletin sur cert.ssi.gouv.fr ↗</a></p>
+{% endif %}
+
+<h2 class="h5 mt-4">CVE référencées ({{ cves|length }})</h2>
+<div class="table-responsive">
+  <table class="table table-sm table-hover bg-white">
+    <thead class="table-light">
+      <tr><th>CVE</th><th>Gravité</th><th class="text-end">CVSS</th><th class="text-end">EPSS</th><th>Éditeur</th><th>Produit</th></tr>
+    </thead>
+    <tbody>
+      {% for cve in cves %}
+      <tr>
+        <td><a href="{% url 'cve_detail' cve.cve_id %}">{{ cve.cve_id }}</a></td>
+        <td>{% include "vulnerabilities/_severity_badge.html" with severity=cve.base_severity %}</td>
+        <td class="text-end">{{ cve.score_cvss|default_if_none:"—" }}</td>
+        <td class="text-end">{% if cve.score_epss is not None %}{{ cve.score_epss|floatformat:4 }}{% else %}—{% endif %}</td>
+        <td class="truncate" title="{{ cve.editeur }}">{{ cve.editeur }}</td>
+        <td class="truncate" title="{{ cve.produit }}">{{ cve.produit }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-center text-muted py-4">Aucune CVE rattachée.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

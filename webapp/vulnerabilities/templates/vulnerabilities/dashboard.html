@@ -1,0 +1,50 @@
+{% extends "vulnerabilities/base.html" %}
+{% block title %}Tableau de bord — Veille CVE{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4">Tableau de bord des vulnérabilités</h1>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card text-center h-100"><div class="card-body">
+      <div class="text-muted small text-uppercase">CVE enrichies</div>
+      <div class="display-6">{{ total_cves }}</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card text-center h-100"><div class="card-body">
+      <div class="text-muted small text-uppercase">Bulletins CERT-FR</div>
+      <div class="display-6">{{ total_bulletins }}</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card text-center h-100"><div class="card-body">
+      <div class="text-muted small text-uppercase">CVE critiques</div>
+      <div class="display-6 text-danger">{{ n_critiques }}</div>
+      <div class="small text-muted">{{ pct_critiques }} % du total</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card text-center h-100"><div class="card-body">
+      <div class="text-muted small text-uppercase">Alertes</div>
+      <div class="display-6 text-warning">{{ n_alertes }}</div>
+      <a class="small" href="{% url 'alerts' %}">CVSS ≥ 9 ou EPSS ≥ 0.5</a>
+    </div></div>
+  </div>
+</div>
+
+{% if charts %}
+<div class="row g-3">
+  <div class="col-12 col-xl-6"><div class="chart-card p-2">{{ charts.cvss_hist|safe }}</div></div>
+  <div class="col-12 col-xl-6"><div class="chart-card p-2">{{ charts.severity_bar|safe }}</div></div>
+  <div class="col-12 col-xl-6"><div class="chart-card p-2">{{ charts.cwe_pie|safe }}</div></div>
+  <div class="col-12 col-xl-6"><div class="chart-card p-2">{{ charts.epss_curve|safe }}</div></div>
+  <div class="col-12 col-xl-6"><div class="chart-card p-2">{{ charts.top_editeurs|safe }}</div></div>
+  <div class="col-12 col-xl-6"><div class="chart-card p-2">{{ charts.cvss_epss_scatter|safe }}</div></div>
+  <div class="col-12"><div class="chart-card p-2">{{ charts.timeline|safe }}</div></div>
+</div>
+{% else %}
+<div class="alert alert-warning">Aucune donnée en base. Lance d'abord
+  <code>uv run python webapp/manage.py import_csv</code>.</div>
+{% endif %}
+{% endblock %}

@@ -110,3 +110,34 @@ Une ligne par couple (bulletin × CVE) — un bulletin multi-CVE est donc répé
 l'enrichissement MITRE. Une CVE pouvant concerner plusieurs produits, les
 valeurs distinctes sont concaténées avec `" ; "` afin de conserver une seule
 ligne par couple (bulletin × CVE). Les champs absents valent `Non disponible`.
+
+## Web app Django (étape 7 — « Pour aller loin », bonus)
+
+Application web qui rend le `consolidated.csv` consultable : **tableau de bord**
+de graphiques interactifs (Plotly), **listes filtrables** de CVE et de bulletins
+avec pages de détail, et **page d'alertes** critiques (mêmes critères que le
+notebook : `CVSS ≥ 9` ou `EPSS ≥ 0.5`). Les données sont chargées dans **SQLite
+via l'ORM Django** (schéma normalisé `Bulletin` ↔ `Cve`).
+
+```
+webapp/
+  manage.py
+  anssi_web/         # projet Django (settings, urls, wsgi/asgi)
+  vulnerabilities/   # app : models, views, charts (Plotly), alerts, admin
+    management/commands/import_csv.py   # charge data/consolidated.csv → SQLite
+    templates/vulnerabilities/          # base + dashboard + listes/détails + alertes
+```
+
+Lancement (après avoir généré `data/consolidated.csv` via le pipeline) :
+
+```bash
+uv run python webapp/manage.py migrate        # crée la base SQLite
+uv run python webapp/manage.py import_csv      # importe le CSV (~126k liens)
+uv run python webapp/manage.py runserver       # http://127.0.0.1:8000/
+```
+
+Routes : `/` (tableau de bord), `/cve/` (liste CVE), `/cve/<CVE-ID>/`,
+`/bulletins/`, `/bulletins/<ID-ANSSI>/`, `/alertes/`. L'interface
+d'administration (`/admin/`) offre une consultation filtrable supplémentaire
+(`createsuperuser` pour y accéder). La base `webapp/db.sqlite3` est régénérable
+et n'est pas versionnée ; relancer `import_csv` la recharge (commande idempotente).

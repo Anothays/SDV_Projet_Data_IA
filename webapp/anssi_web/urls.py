@@ -1,0 +1,9 @@
+"""Routage racine : admin Django + routes de l'app vulnerabilities."""
+
+from django.contrib import admin
+from django.urls import include, path
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("", include("vulnerabilities.urls")),
+]
