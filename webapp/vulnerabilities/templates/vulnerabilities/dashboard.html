@@ -1,47 +1,60 @@
 {% extends "vulnerabilities/base.html" %}
+{% load glossary %}
 {% block title %}Tableau de bord — Veille CVE{% endblock %}
 
 {% block content %}
-<h1 class="h3 mb-4">Tableau de bord des vulnérabilités</h1>
+<h1 class="h3 mb-2">Tableau de bord des vulnérabilités</h1>
+<p class="text-muted mb-4 intro-lead">
+  Cette page surveille les failles de sécurité informatique ({% term "cve" %})
+  signalées par le {% term "certfr" %} de l'{% term "anssi" %}. Survolez les
+  termes <span class="glossary-term">soulignés</span> pour leur définition.
+</p>
 
 <div class="row g-3 mb-4">
   <div class="col-6 col-lg-3">
     <div class="card kpi-card text-center h-100"><div class="card-body">
-      <div class="text-muted small text-uppercase">CVE enrichies</div>
+      <div class="text-muted small text-uppercase">Failles suivies ({% term "cve" %})</div>
       <div class="display-6">{{ total_cves }}</div>
     </div></div>
   </div>
   <div class="col-6 col-lg-3">
     <div class="card kpi-card text-center h-100"><div class="card-body">
-      <div class="text-muted small text-uppercase">Bulletins CERT-FR</div>
+      <div class="text-muted small text-uppercase">{% term "bulletin" "Bulletins" %} {% term "certfr" %}</div>
       <div class="display-6">{{ total_bulletins }}</div>
     </div></div>
   </div>
   <div class="col-6 col-lg-3">
     <div class="card kpi-card text-center h-100"><div class="card-body">
-      <div class="text-muted small text-uppercase">CVE critiques</div>
+      <div class="text-muted small text-uppercase">Failles critiques</div>
       <div class="display-6 text-danger">{{ n_critiques }}</div>
-      <div class="small text-muted">{{ pct_critiques }} % du total</div>
+      <div class="small text-muted">{{ pct_critiques }} % du total · les plus dangereuses</div>
     </div></div>
   </div>
   <div class="col-6 col-lg-3">
     <div class="card kpi-card text-center h-100"><div class="card-body">
-      <div class="text-muted small text-uppercase">Alertes</div>
+      <div class="text-muted small text-uppercase">Alertes à traiter</div>
       <div class="display-6 text-warning">{{ n_alertes }}</div>
-      <a class="small" href="{% url 'alerts' %}">CVSS ≥ 9 ou EPSS ≥ 0.5</a>
+      <a class="small" href="{% url 'alerts' %}">{% term "cvss" %} ≥ 9 ou {% term "epss" %} ≥ 0.5</a>
     </div></div>
   </div>
 </div>
 
 {% if charts %}
 <div class="row g-3">
-  <div class="col-12 col-xl-6"><div class="chart-card p-2">{{ charts.cvss_hist|safe }}</div></div>
-  <div class="col-12 col-xl-6"><div class="chart-card p-2">{{ charts.severity_bar|safe }}</div></div>
-  <div class="col-12 col-xl-6"><div class="chart-card p-2">{{ charts.cwe_pie|safe }}</div></div>
-  <div class="col-12 col-xl-6"><div class="chart-card p-2">{{ charts.epss_curve|safe }}</div></div>
-  <div class="col-12 col-xl-6"><div class="chart-card p-2">{{ charts.top_editeurs|safe }}</div></div>
-  <div class="col-12 col-xl-6"><div class="chart-card p-2">{{ charts.cvss_epss_scatter|safe }}</div></div>
-  <div class="col-12"><div class="chart-card p-2">{{ charts.timeline|safe }}</div></div>
+  {% for card in charts %}
+  <div class="{% if card.full_width %}col-12{% else %}col-12 col-xl-6{% endif %}">
+    <div class="chart-card p-3 h-100">
+      {{ card.html|safe }}
+      <p class="chart-lede small text-muted mt-2 mb-2">{{ card.lede }}</p>
+      {% if card.takeaway %}
+      <p class="chart-takeaway small mb-0">
+        <span class="badge bg-primary-subtle text-primary-emphasis">À retenir</span>
+        {{ card.takeaway }}
+      </p>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
 </div>
 {% else %}
 <div class="alert alert-warning">Aucune donnée en base. Lance d'abord

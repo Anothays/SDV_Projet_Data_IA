@@ -1,12 +1,14 @@
 {% extends "vulnerabilities/base.html" %}
+{% load glossary %}
 {% block title %}Alertes critiques — Veille CVE{% endblock %}
 
 {% block content %}
 <h1 class="h3 mb-1">Alertes critiques</h1>
 <p class="text-muted">
-  Vulnérabilités déclenchant une alerte : <strong>CVSS ≥ 9</strong> <em>ou</em>
-  <strong>EPSS ≥ 0.5</strong> — soit {{ total }} CVE, triées par priorité
-  (probabilité d'exploitation puis gravité).
+  Failles déclenchant une alerte : <strong>{% term "cvss" %} ≥ 9</strong> <em>ou</em>
+  <strong>{% term "epss" %} ≥ 0.5</strong> — soit {{ total }} failles, triées par
+  priorité (probabilité d'exploitation puis gravité). Ce sont les failles à la fois
+  les plus graves et les plus susceptibles d'être réellement attaquées.
 </p>
 
 {% if previews %}
@@ -27,7 +29,7 @@
 <div class="table-responsive">
   <table class="table table-sm table-hover bg-white">
     <thead class="table-light">
-      <tr><th>CVE</th><th>Gravité</th><th class="text-end">CVSS</th><th class="text-end">EPSS</th><th>Éditeur</th><th>Produit</th></tr>
+      <tr><th>{% term "cve" %}</th><th>Gravité</th><th class="text-end">{% term "cvss" %}</th><th class="text-end">{% term "epss" %}</th><th>Éditeur</th><th>Produit</th></tr>
     </thead>
     <tbody>
       {% for cve in page_obj %}

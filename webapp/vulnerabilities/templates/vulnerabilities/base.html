@@ -13,6 +13,13 @@
     .table-sm td, .table-sm th { vertical-align:middle; }
     .truncate { max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     pre.email-preview { background:#1e1e1e; color:#e6e6e6; padding:1rem; border-radius:.4rem; white-space:pre-wrap; font-size:.85rem; }
+    /* Termes du glossaire : soulignés en pointillés, cliquables pour la définition. */
+    .glossary-term { text-decoration:underline dotted; text-underline-offset:2px;
+      cursor:help; font-weight:600; border:0; }
+    .glossary-term:focus { outline:2px solid #0d6efd; outline-offset:2px; border-radius:2px; }
+    .chart-lede { line-height:1.35; }
+    .chart-takeaway .badge { font-weight:600; }
+    .intro-lead { max-width:70ch; }
   </style>
 </head>
 <body>
@@ -46,5 +53,11 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Active les infobulles du glossaire (sigles expliqués en langage courant).
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+      new bootstrap.Tooltip(el);
+    });
+  </script>
 </body>
 </html>
