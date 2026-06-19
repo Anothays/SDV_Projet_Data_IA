@@ -58,9 +58,12 @@ tout `data/*`) doit donc être inclus manuellement dans l'archive envoyée.
 
 **Web app Django (2026-06-19, bonus §7 du PDF « Pour aller loin »)** :
 application optionnelle sous `webapp/` (projet `anssi_web`, app
-`vulnerabilities`) qui expose le `consolidated.csv` — tableau de bord Plotly,
-listes filtrables CVE/bulletins + pages de détail, page d'alertes (`CVSS ≥ 9`
-ou `EPSS ≥ 0.5`). Données chargées en **SQLite via l'ORM** (schéma normalisé
+`vulnerabilities`) qui expose le `consolidated.csv` — tableau de bord Plotly
+(dont une carte avis/alertes par éditeur), listes filtrables CVE/bulletins +
+pages de détail, page d'alertes (`CVSS ≥ 9` ou `EPSS ≥ 0.5`) **filtrable par
+éditeur/produit/type/année** (alertes « sur mesure », aperçu email recalculé sur
+la sélection) et **export CSV** des résultats filtrés (`/cve/export.csv`,
+`/alertes/export.csv`). Données chargées en **SQLite via l'ORM** (schéma normalisé
 `Bulletin` ↔ `Cve`) par la commande `import_csv`, qui réutilise
 `anssi_cve.config.OUTPUT_CSV`. Les graphiques (`charts.py`) et l'email d'alerte
 (`alerts.py`) portent la logique du notebook (étapes 5 et 7). Pas de ML dans

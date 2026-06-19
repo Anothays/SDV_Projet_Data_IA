@@ -9,10 +9,51 @@
   <strong>{% term "epss" %} ≥ 0.5</strong> — soit {{ total }} failles, triées par
   priorité (probabilité d'exploitation puis gravité). Ce sont les failles à la fois
   les plus graves et les plus susceptibles d'être réellement attaquées.
+  <strong>Ciblez vos produits/éditeurs</strong> ci-dessous pour une veille sur mesure.
 </p>
 
+<form method="get" class="card card-body mb-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label small mb-1">Éditeur</label>
+      <select name="editeur" aria-label="Filtrer les alertes par éditeur" class="form-select form-select-sm">
+        <option value="">Tous</option>
+        {% for e in editeurs %}
+          <option value="{{ e }}" {% if filters.editeur == e %}selected{% endif %}>{{ e }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label small mb-1">Produit (mot-clé)</label>
+      <input type="text" name="produit" value="{{ filters.produit }}" class="form-control form-control-sm" placeholder="ex. Windows, Apache…">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label small mb-1">Type</label>
+      <select name="type" aria-label="Filtrer les alertes par type de bulletin" class="form-select form-select-sm">
+        <option value="">Tous</option>
+        {% for t in types %}
+          <option value="{{ t }}" {% if filters.type == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label small mb-1">Année</label>
+      <select name="annee" aria-label="Filtrer les alertes par année" class="form-select form-select-sm">
+        <option value="">Toutes</option>
+        {% for y in years %}
+          <option value="{{ y }}" {% if filters.annee == y|stringformat:'s' %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2 d-flex gap-2">
+      <button type="submit" class="btn btn-primary btn-sm w-100">Filtrer</button>
+      <a href="{% url 'alerts' %}" class="btn btn-outline-secondary btn-sm">Réinit.</a>
+    </div>
+  </div>
+</form>
+
 {% if previews %}
-<h2 class="h5 mt-4">Aperçus d'email (top 3)</h2>
+<h2 class="h5 mt-4">Aperçus d'email pour la sélection (top 3)</h2>
 <div class="row g-3 mb-4">
   {% for p in previews %}
   <div class="col-lg-4">
@@ -25,7 +66,10 @@
 </div>
 {% endif %}
 
-<h2 class="h5">Toutes les alertes</h2>
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h2 class="h5 mb-0">Toutes les alertes ({{ total }})</h2>
+  <a class="btn btn-outline-success btn-sm" href="{% url 'alerts_export' %}{% if base_query %}?{{ base_query }}{% endif %}">⬇ Exporter (CSV)</a>
+</div>
 <div class="table-responsive">
   <table class="table table-sm table-hover bg-white">
     <thead class="table-light">

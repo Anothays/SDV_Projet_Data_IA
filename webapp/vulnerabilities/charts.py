@@ -13,7 +13,7 @@ chargé une seule fois via CDN dans ``base.html`` → ``include_plotlyjs=False``
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from django.db.models import Min
+from django.db.models import Count, Min
 
 from .models import UNAVAILABLE, Cve
 
@@ -73,9 +73,10 @@ def build_dashboard_charts() -> list[dict]:
         _top_editeurs(df),
         _cvss_epss_scatter(df),
     ]
-    timeline = _cumulative_timeline()
-    if timeline is not None:
-        cards.append(timeline)
+    # Cartes pleine largeur (croisements nécessitant la base, pas le DataFrame CVE).
+    for extra in (_avis_alerte_by_editeur(), _cumulative_timeline()):
+        if extra is not None:
+            cards.append(extra)
     return cards
 
 
@@ -201,6 +202,56 @@ def _cvss_epss_scatter(df: pd.DataFrame) -> dict:
         "probablement exploités.",
         f"{n_prio} failles cumulent forte gravité (CVSS ≥ 7) et forte "
         "probabilité d'exploitation (EPSS ≥ 0,5) : à traiter en priorité.",
+    )
+
+
+def _avis_alerte_by_editeur() -> dict | None:
+    """Top 10 éditeurs : nombre de CVE distinctes citées en Avis vs en Alerte.
+
+    Répond à la suggestion de l'étape 5 du sujet (« distinguer les types de
+    bulletins par éditeur »). Croise le niveau CVE (``editeur``) avec le type
+    des bulletins citant la CVE. Une CVE figurant à la fois dans un avis et une
+    alerte est comptée dans les deux barres (elle a été signalée des deux façons).
+    """
+    rows = (
+        Cve.objects.exclude(editeur=UNAVAILABLE).exclude(editeur="")
+        .values("editeur", "bulletins__type_bulletin")
+        .annotate(n=Count("cve_id", distinct=True))
+    )
+    df = pd.DataFrame.from_records(rows).rename(columns={"bulletins__type_bulletin": "type_bulletin"})
+    if df.empty:
+        return None
+    df = df.dropna(subset=["type_bulletin"])
+    df = df[df["type_bulletin"] != ""]
+    if df.empty:
+        return None
+
+    totals = df.groupby("editeur")["n"].sum().sort_values(ascending=False)
+    top = totals.head(10).index.tolist()
+    sub = df[df["editeur"].isin(top)]
+    # Axe Y : éditeur le plus affecté en haut (px place la 1ʳᵉ catégorie en bas).
+    order = totals.loc[top].sort_values().index.tolist()
+
+    fig = px.bar(
+        sub, x="n", y="editeur", color="type_bulletin", orientation="h",
+        category_orders={"editeur": order},
+        color_discrete_map={"Avis": "#1f77b4", "Alerte": "#d62728"},
+        title="Avis vs Alertes pour les 10 éditeurs les plus affectés",
+    )
+    fig.update_layout(
+        xaxis_title="Nombre de CVE", yaxis_title="",
+        legend_title_text="Type de bulletin", barmode="stack",
+    )
+    leader = totals.index[0]
+    n_alerte = int(df.loc[(df["editeur"] == leader) & (df["type_bulletin"] == "Alerte"), "n"].sum())
+    return _card(
+        _fig_html(fig),
+        "Pour chaque éditeur, répartition des failles selon le type de bulletin "
+        "CERT-FR : un « avis » signale une faille connue à corriger, une "
+        "« alerte » vise une faille déjà activement exploitée (plus urgente).",
+        f"« {leader} » est l'éditeur le plus affecté ; {n_alerte} de ses CVE ont "
+        "fait l'objet d'une alerte (faille activement exploitée).",
+        full_width=True,
     )
 
 

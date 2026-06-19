@@ -114,10 +114,14 @@ ligne par couple (bulletin × CVE). Les champs absents valent `Non disponible`.
 ## Web app Django (étape 7 — « Pour aller loin », bonus)
 
 Application web qui rend le `consolidated.csv` consultable : **tableau de bord**
-de graphiques interactifs (Plotly), **listes filtrables** de CVE et de bulletins
-avec pages de détail, et **page d'alertes** critiques (mêmes critères que le
-notebook : `CVSS ≥ 9` ou `EPSS ≥ 0.5`). Les données sont chargées dans **SQLite
-via l'ORM Django** (schéma normalisé `Bulletin` ↔ `Cve`).
+de graphiques interactifs (Plotly, dont une répartition **avis vs alertes par
+éditeur**), **listes filtrables** de CVE et de bulletins avec pages de détail, et
+**page d'alertes** critiques (`CVSS ≥ 9` ou `EPSS ≥ 0.5` comme le notebook). Cette
+page d'alertes est **filtrable par éditeur / produit / type / année** : c'est la
+veille « sur mesure » du sujet, avec un **aperçu d'email recalculé sur la
+sélection**. Les listes CVE et alertes exposent un **export CSV des résultats
+filtrés**. Les données sont chargées dans **SQLite via l'ORM Django** (schéma
+normalisé `Bulletin` ↔ `Cve`).
 
 ```
 webapp/
@@ -137,7 +141,8 @@ uv run python webapp/manage.py runserver       # http://127.0.0.1:8000/
 ```
 
 Routes : `/` (tableau de bord, accessible sans connexion), `/cve/` (liste CVE),
-`/cve/<CVE-ID>/`, `/bulletins/`, `/bulletins/<ID-ANSSI>/`, `/alertes/`.
+`/cve/<CVE-ID>/`, `/cve/export.csv` (export CSV filtré), `/bulletins/`,
+`/bulletins/<ID-ANSSI>/`, `/alertes/`, `/alertes/export.csv` (export CSV filtré).
 
 ### Accès à l'interface d'administration (`/admin/`)
 
