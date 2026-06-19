@@ -136,8 +136,23 @@ uv run python webapp/manage.py import_csv      # importe le CSV (~126k liens)
 uv run python webapp/manage.py runserver       # http://127.0.0.1:8000/
 ```
 
-Routes : `/` (tableau de bord), `/cve/` (liste CVE), `/cve/<CVE-ID>/`,
-`/bulletins/`, `/bulletins/<ID-ANSSI>/`, `/alertes/`. L'interface
-d'administration (`/admin/`) offre une consultation filtrable supplémentaire
-(`createsuperuser` pour y accéder). La base `webapp/db.sqlite3` est régénérable
-et n'est pas versionnée ; relancer `import_csv` la recharge (commande idempotente).
+Routes : `/` (tableau de bord, accessible sans connexion), `/cve/` (liste CVE),
+`/cve/<CVE-ID>/`, `/bulletins/`, `/bulletins/<ID-ANSSI>/`, `/alertes/`.
+
+### Accès à l'interface d'administration (`/admin/`)
+
+Distincte du tableau de bord : `/admin/` est l'interface Django standard de
+consultation brute des tables (`Cve`, `Bulletin`) avec recherche, filtres et
+tri — pas les graphiques. Elle nécessite un compte superutilisateur, à créer
+une seule fois :
+
+```bash
+uv run python webapp/manage.py createsuperuser
+```
+
+Renseigner un nom d'utilisateur, un email (optionnel) et un mot de passe
+(saisie interactive, invisible). Se connecter ensuite sur
+`http://127.0.0.1:8000/admin/` avec ces identifiants.
+
+La base `webapp/db.sqlite3` est régénérable et n'est pas versionnée ; relancer
+`import_csv` la recharge (commande idempotente), sans toucher au compte admin.
