@@ -47,6 +47,20 @@ def _editeurs() -> list[str]:
     )
 
 
+def _bulletin_types() -> list[str]:
+    """Types de bulletin distincts (Avis / Alerte) pour les filtres déroulants.
+
+    ``order_by("type_bulletin")`` est indispensable : il remplace l'ordre par
+    défaut du modèle (``-date_publication``), sans quoi ces colonnes de tri
+    s'ajoutent au ``SELECT DISTINCT`` et renvoient un doublon par bulletin.
+    """
+    return list(
+        Bulletin.objects.order_by("type_bulletin")
+        .values_list("type_bulletin", flat=True)
+        .distinct()
+    )
+
+
 def dashboard(request):
     """Tableau de bord : indicateurs clés + graphiques Plotly (étape 5)."""
     total_cves = Cve.objects.count()
@@ -157,7 +171,7 @@ def bulletin_list(request):
     context = {
         "page_obj": page,
         "filters": filters,
-        "types": list(Bulletin.objects.values_list("type_bulletin", flat=True).distinct()),
+        "types": _bulletin_types(),
         "years": _published_years(),
         "base_query": _querystring_excluding(request, "page"),
         "base_query_sort": _querystring_excluding(request, "page", "sort"),
@@ -224,7 +238,7 @@ def alerts(request):
         "filters": filters,
         "editeurs": _editeurs(),
         "years": _published_years(),
-        "types": list(Bulletin.objects.values_list("type_bulletin", flat=True).distinct()),
+        "types": _bulletin_types(),
         "base_query": _querystring_excluding(request, "page"),
     }
     return render(request, "vulnerabilities/alerts.html", context)
