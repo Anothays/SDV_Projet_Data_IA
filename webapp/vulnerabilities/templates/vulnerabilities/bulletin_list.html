@@ -1,4 +1,5 @@
 {% extends "vulnerabilities/base.html" %}
+{% load sort_tags %}
 {% block title %}Bulletins — Veille CVE{% endblock %}
 
 {% block content %}
@@ -40,7 +41,13 @@
 <div class="table-responsive">
   <table class="table table-sm table-hover bg-white">
     <thead class="table-light">
-      <tr><th>Identifiant</th><th>Type</th><th>Date</th><th>Titre</th></tr>
+      <tr>
+        <th>Identifiant</th><th>Type</th>
+        <th>
+          <a class="text-decoration-none text-dark" href="?{{ base_query_sort }}{% if base_query_sort %}&{% endif %}sort={{ sort|toggle_sort:'date_publication' }}">Date {{ sort|sort_arrow:'date_publication' }}</a>
+        </th>
+        <th>Titre</th>
+      </tr>
     </thead>
     <tbody>
       {% for b in page_obj %}

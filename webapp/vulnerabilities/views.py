@@ -11,11 +11,20 @@ from .models import SEVERITY_ORDER, Bulletin, Cve
 PAGE_SIZE = 25
 
 
-def _querystring_without_page(request) -> str:
-    """Querystring courant sans le paramètre ``page`` (pour les liens de pagination)."""
+def _querystring_excluding(request, *names: str) -> str:
+    """Querystring courant sans les paramètres donnés (pagination, tri…)."""
     params = request.GET.copy()
-    params.pop("page", None)
+    for name in names:
+        params.pop(name, None)
     return params.urlencode()
+
+
+def _resolve_sort(request, allowed_fields: set[str], default: str) -> str:
+    """Valide le paramètre ``sort`` (``champ`` ou ``-champ``) contre une liste autorisée."""
+    sort = request.GET.get("sort", default)
+    if sort.lstrip("-") not in allowed_fields:
+        sort = default
+    return sort
 
 
 def _published_years() -> list[int]:
@@ -73,14 +82,17 @@ def vulnerability_list(request):
         except ValueError:
             pass
 
-    qs = qs.order_by("-score_cvss", "cve_id")
+    sort = _resolve_sort(request, {"score_cvss", "score_epss"}, "-score_cvss")
+    qs = qs.order_by(sort, "cve_id")
     page = Paginator(qs, PAGE_SIZE).get_page(request.GET.get("page"))
     context = {
         "page_obj": page,
         "filters": filters,
         "severities": SEVERITY_ORDER,
         "years": _published_years(),
-        "base_query": _querystring_without_page(request),
+        "base_query": _querystring_excluding(request, "page"),
+        "base_query_sort": _querystring_excluding(request, "page", "sort"),
+        "sort": sort,
         "total": page.paginator.count,
     }
     return render(request, "vulnerabilities/vulnerability_list.html", context)
@@ -115,13 +127,17 @@ def bulletin_list(request):
         except ValueError:
             pass
 
+    sort = _resolve_sort(request, {"date_publication"}, "-date_publication")
+    qs = qs.order_by(sort, "id_anssi")
     page = Paginator(qs, PAGE_SIZE).get_page(request.GET.get("page"))
     context = {
         "page_obj": page,
         "filters": filters,
         "types": list(Bulletin.objects.values_list("type_bulletin", flat=True).distinct()),
         "years": _published_years(),
-        "base_query": _querystring_without_page(request),
+        "base_query": _querystring_excluding(request, "page"),
+        "base_query_sort": _querystring_excluding(request, "page", "sort"),
+        "sort": sort,
         "total": page.paginator.count,
     }
     return render(request, "vulnerabilities/bulletin_list.html", context)
@@ -152,6 +168,6 @@ def alerts(request):
         "page_obj": page,
         "total": page.paginator.count,
         "previews": previews,
-        "base_query": _querystring_without_page(request),
+        "base_query": _querystring_excluding(request, "page"),
     }
     return render(request, "vulnerabilities/alerts.html", context)
